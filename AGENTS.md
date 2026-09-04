@@ -29,6 +29,10 @@ Use strict TypeScript and two-space indentation. Name React components and types
 
 For every React or Next.js implementation, review, or refactor in this repository, apply the `vercel-react-best-practices` skill before changing code. Read the individual rule files relevant to the task, prioritize higher-impact categories first, and verify the result with lint, TypeScript, tests, and a production build. Follow the version-matched Next.js documentation in `node_modules/next/dist/docs/` when framework behavior differs from general guidance.
 
+## UX & Interaction Guidelines
+
+Every enabled `button` and button-like control must use a pointer cursor so its interactivity is immediately clear; disabled controls must use a not-allowed cursor. When a user changes routes through the top navigation, keep the navigation stable and fade the page content in over 150–250ms. Implement the fade with lightweight CSS, do not delay navigation, and honor `prefers-reduced-motion` by effectively disabling the animation. Add or update a browser test when changing either behavior.
+
 ## Testing Guidelines
 
 Add tests for each behavior change, including failure paths and persistence boundaries. Use Testing Library for component behavior and Playwright for complete user flows, responsive layouts, and accessibility. Keep tests deterministic and query elements by accessible role or label.

@@ -54,6 +54,7 @@ function Footer() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const session = useTrackerStore((state) => state.session);
   const hasHydrated = useTrackerStore((state) => state.hasHydrated);
   const storageWarning = useTrackerStore((state) => state.storageWarning);
@@ -98,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {storageWarning && <div className="mx-auto mt-4 w-full max-w-[1440px] px-4 sm:px-6"><div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200" role="status">Browser storage was unavailable, so Sabame restored the demo watchlist for this visit.</div></div>}
 
-      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-8 sm:px-6 lg:pb-8">{children}</main>
+      <main key={pathname} className="route-fade mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-8 sm:px-6 lg:pb-8">{children}</main>
       <Footer />
 
       <nav aria-label="Mobile primary" className="glass-floating fixed inset-x-3 bottom-3 z-50 flex justify-around rounded-xl p-1.5 md:hidden">

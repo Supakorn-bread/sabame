@@ -29,7 +29,7 @@ export default function DashboardPage() {
     <AppShell>
       {featured && (
         <section className="glass-panel relative min-h-[400px] overflow-hidden rounded-xl" aria-labelledby="currently-watching-title">
-          <AnimeArtwork anime={featured.anime} variant="hero" priority className="absolute inset-0 h-full w-full opacity-90" />
+          <AnimeArtwork anime={featured.anime} variant="hero" priority className="absolute inset-0 h-[400px] w-full opacity-90" />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-[color-mix(in_srgb,var(--bg)_68%,transparent)] to-[color-mix(in_srgb,var(--bg)_8%,transparent)] md:bg-gradient-to-r" />
           <div className="relative z-10 flex min-h-[400px] max-w-2xl flex-col justify-end gap-4 p-6 sm:p-8 md:justify-center">
             <div className="flex flex-wrap items-center gap-2 text-xs">

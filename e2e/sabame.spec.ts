@@ -10,6 +10,9 @@ async function logIn(page: Page) {
 }
 
 async function expectNoAccessibilityViolations(page: Page) {
+  await page.locator("main").evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
 }
@@ -48,4 +51,21 @@ test("mobile layout exposes primary navigation without horizontal overflow", asy
   );
   expect(viewportFits).toBe(true);
   await expectNoAccessibilityViolations(page);
+});
+
+test("top navigation fades route content and buttons use a pointer cursor", async ({ page }) => {
+  await logIn(page);
+
+  await page.getByRole("navigation", { name: "Primary", exact: true }).getByRole("link", { name: "Library" }).click();
+  await expect(page).toHaveURL("/library");
+
+  const mainAnimation = await page.locator("main").evaluate(
+    (element) => getComputedStyle(element).animationName,
+  );
+  expect(mainAnimation).toContain("route-fade");
+
+  const buttonCursor = await page.getByRole("button", { name: "More filters" }).evaluate(
+    (element) => getComputedStyle(element).cursor,
+  );
+  expect(buttonCursor).toBe("pointer");
 });
