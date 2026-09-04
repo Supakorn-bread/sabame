@@ -1,4 +1,5 @@
 .worktrees/
+.codex/
 node_modules/
 .next/
 coverage/

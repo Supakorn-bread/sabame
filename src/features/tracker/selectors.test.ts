@@ -37,7 +37,7 @@ describe("tracker selectors", () => {
     const library = createSeedLibrary();
 
     expect(filterLibrary(library, "completed", "").map(({ anime }) => anime.id)).toEqual(["last-shrine"]);
-    expect(filterLibrary(library, "all", "  MOONLIT ").map(({ anime }) => anime.id)).toEqual(["moonlit-recipe"]);
-    expect(filterLibrary(library, "planned", "harbor").map(({ anime }) => anime.id)).toEqual(["harbor-of-wishes"]);
+    expect(filterLibrary(library, "all", "  MUSHOKU ").map(({ anime }) => anime.id)).toEqual(["moonlit-recipe"]);
+    expect(filterLibrary(library, "planned", "eminence").map(({ anime }) => anime.id)).toEqual(["harbor-of-wishes"]);
   });
 });

@@ -13,6 +13,7 @@ export interface Anime {
   accent: AnimeAccent;
   coverUrl?: string;
   heroUrl?: string;
+  score?: string;
 }
 
 export interface LibraryEntry {

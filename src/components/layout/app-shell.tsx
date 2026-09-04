@@ -1,18 +1,12 @@
 "use client";
 
-import {
-  CalendarDays,
-  Clock3,
-  Home,
-  Library,
-  LogOut,
-  Search,
-  Sparkles,
-} from "lucide-react";
+import { Bell, CalendarDays, Home, Library, LogOut, Search, Sparkles } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { STITCH_ASSETS } from "@/features/tracker/seed";
 import { useTrackerStore } from "@/features/tracker/store";
 
 import { LoadingScreen } from "../loading-screen";
@@ -20,9 +14,9 @@ import { Logo } from "../logo";
 import { ThemeToggle } from "../theme-toggle";
 
 const navigation = [
-  { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/library", label: "Library", icon: Library },
+  { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/seasonal", label: "Seasonal", icon: Sparkles },
+  { href: "/library", label: "Library", icon: Library },
   { href: "/schedule", label: "Schedule", icon: CalendarDays },
 ] as const;
 
@@ -34,21 +28,27 @@ function NavigationLink({ href, label, icon: Icon, compact = false }: (typeof na
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={
-        compact
-          ? `flex min-w-16 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[0.64rem] font-bold transition ${
-              active ? "bg-[var(--primary-soft)] text-[var(--primary)]" : "text-[var(--text-faint)]"
-            }`
-          : `flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-bold transition ${
-              active
-                ? "bg-[var(--primary-soft)] text-[var(--primary)]"
-                : "text-[var(--text-soft)] hover:bg-[var(--panel)] hover:text-[var(--text)]"
-            }`
-      }
+      className={compact
+        ? `flex min-w-16 flex-1 flex-col items-center gap-1 rounded-lg px-2 py-2 text-[0.64rem] font-bold transition ${active ? "bg-[var(--primary-soft)] text-[var(--primary)]" : "text-[var(--text-faint)]"}`
+        : `border-b-2 pb-1 text-sm transition-colors ${active ? "border-[var(--primary)] font-bold text-[var(--primary)]" : "border-transparent font-medium text-[var(--text-soft)] hover:text-[var(--primary)]"}`}
     >
-      <Icon size={compact ? 19 : 18} strokeWidth={active ? 2.4 : 1.8} />
+      {compact && <Icon size={18} strokeWidth={active ? 2.4 : 1.8} />}
       <span>{label}</span>
     </Link>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="mt-auto border-t border-[var(--border)] bg-[var(--bg-lowest)] py-8">
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-4 sm:px-6 md:flex-row">
+        <Logo compact />
+        <nav aria-label="Footer" className="flex flex-wrap justify-center gap-5 text-[0.7rem] font-medium text-[var(--text-soft)]">
+          <a href="#discord">Discord</a><a href="#github">GitHub</a><a href="#privacy">Privacy Policy</a><a href="#activity">Group Activity</a>
+        </nav>
+        <p className="text-center text-[0.68rem] text-[var(--text-soft)]">© 2026 Sabame. Powered by MyAnimeList.</p>
+      </div>
+    </footer>
   );
 }
 
@@ -65,78 +65,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!hasHydrated || !session) return <LoadingScreen />;
 
-  const initial = session.displayName.charAt(0).toUpperCase();
-
   function handleLogout() {
     logout();
     router.replace("/login");
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="glass-panel fixed inset-y-4 left-4 z-30 hidden w-[232px] flex-col rounded-[2rem] p-4 lg:flex">
-        <div className="px-2 pb-6 pt-1">
-          <Logo />
-        </div>
-
-        <nav aria-label="Primary" className="space-y-1">
-          {navigation.map((item) => <NavigationLink key={item.href} {...item} />)}
-        </nav>
-
-        <div className="mt-auto space-y-4">
-          <div className="rounded-[1.4rem] border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
-            <div className="mb-3 flex items-center gap-2 text-[var(--primary)]">
-              <Clock3 size={16} />
-              <span className="eyebrow">Daily rhythm</span>
-            </div>
-            <p className="text-xs leading-relaxed text-[var(--text-soft)]">A little progress still counts. Your next episode is waiting.</p>
+    <div className="flex min-h-screen flex-col pt-20">
+      <header className="glass-nav fixed inset-x-0 top-0 z-50">
+        <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="flex items-center gap-8">
+            <Logo />
+            <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
+              {navigation.map((item) => <NavigationLink key={item.href} {...item} />)}
+            </nav>
           </div>
-          <ThemeToggle />
-        </div>
-      </aside>
-
-      <div className="min-w-0 lg:col-start-2">
-        <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-10">
-          <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3">
-            <div className="lg:hidden"><Logo /></div>
-            <Link
-              href="/library"
-              className="hidden h-10 min-w-0 max-w-md flex-1 items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--panel)] px-4 text-sm text-[var(--text-faint)] transition hover:border-[var(--border-strong)] md:flex"
-            >
-              <Search size={16} />
-              <span>Search your library</span>
-              <span className="ml-auto rounded-lg border border-[var(--border)] px-2 py-0.5 text-[0.65rem] font-bold">⌘ K</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/library" className="glass-panel hidden h-10 w-52 items-center rounded-full px-3 text-xs text-[var(--text-faint)] lg:flex">
+              <Search size={14} className="mr-2" /><span>Search anime...</span>
             </Link>
-            <div className="flex items-center gap-2">
-              <ThemeToggle compact />
-              <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--panel)] p-1 pr-2 sm:pr-3">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--primary-soft)] text-xs font-extrabold text-[var(--primary)]">{initial}</span>
-                <span className="hidden max-w-28 truncate text-xs font-bold sm:block">{session.displayName}</span>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="grid h-8 w-8 place-items-center rounded-full text-[var(--text-faint)] transition hover:bg-[var(--primary-soft)] hover:text-[var(--primary)]"
-                  aria-label="Log out"
-                >
-                  <LogOut size={15} />
-                </button>
-              </div>
-            </div>
+            <ThemeToggle compact />
+            <button type="button" className="grid h-10 w-10 place-items-center rounded-full text-[var(--text-soft)] transition hover:bg-[var(--primary-soft)] hover:text-[var(--primary)]" aria-label="Notifications">
+              <Bell size={18} />
+            </button>
+            <button type="button" onClick={handleLogout} className="group relative h-10 w-10 overflow-hidden rounded-full border border-[var(--border-strong)]" aria-label="Log out">
+              <Image src={STITCH_ASSETS.avatar} alt="" fill sizes="40px" className="object-cover transition group-hover:scale-105" />
+              <span className="absolute inset-0 grid place-items-center bg-black/55 text-white opacity-0 transition group-hover:opacity-100"><LogOut size={15} /></span>
+            </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {storageWarning && (
-          <div className="mx-auto mt-4 max-w-[1440px] px-4 sm:px-6 lg:px-10">
-            <div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200" role="status">
-              Browser storage was unavailable, so Sabame restored the demo watchlist for this visit.
-            </div>
-          </div>
-        )}
+      {storageWarning && <div className="mx-auto mt-4 w-full max-w-[1440px] px-4 sm:px-6"><div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200" role="status">Browser storage was unavailable, so Sabame restored the demo watchlist for this visit.</div></div>}
 
-        <main className="mx-auto max-w-[1440px] px-4 pb-28 pt-8 sm:px-6 sm:pt-10 lg:px-10 lg:pb-12">{children}</main>
-      </div>
+      <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-8 sm:px-6 lg:pb-8">{children}</main>
+      <Footer />
 
-      <nav aria-label="Mobile primary" className="glass-panel fixed inset-x-3 bottom-3 z-30 flex justify-around rounded-[1.6rem] p-1.5 lg:hidden">
+      <nav aria-label="Mobile primary" className="glass-floating fixed inset-x-3 bottom-3 z-50 flex justify-around rounded-xl p-1.5 md:hidden">
         {navigation.map((item) => <NavigationLink key={item.href} {...item} compact />)}
       </nav>
     </div>

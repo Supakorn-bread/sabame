@@ -16,7 +16,7 @@ describe("LoginForm", () => {
     }));
 
     render(<LoginForm onLogin={onLogin} onAuthenticated={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: /enter sabame/i }));
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(screen.getByText("Enter a valid email address.")).toBeInTheDocument();
     expect(screen.getByText("Use at least 6 characters.")).toBeInTheDocument();
@@ -30,7 +30,7 @@ describe("LoginForm", () => {
     render(<LoginForm onLogin={onLogin} onAuthenticated={onAuthenticated} />);
     await user.type(screen.getByLabelText(/email/i), "viewer@sabame.app");
     await user.type(screen.getByLabelText(/^password$/i), "123456");
-    await user.click(screen.getByRole("button", { name: /enter sabame/i }));
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     expect(onLogin).toHaveBeenCalledWith("viewer@sabame.app", "123456");
     expect(onAuthenticated).toHaveBeenCalledOnce();

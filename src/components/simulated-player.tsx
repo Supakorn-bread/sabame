@@ -12,6 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 function formatTime(seconds: number) {
@@ -27,6 +28,7 @@ interface SimulatedPlayerProps {
   initialPosition: number;
   onPositionChange: (seconds: number) => void;
   onComplete: () => void;
+  imageUrl?: string;
 }
 
 export function SimulatedPlayer({
@@ -36,6 +38,7 @@ export function SimulatedPlayer({
   initialPosition,
   onPositionChange,
   onComplete,
+  imageUrl,
 }: SimulatedPlayerProps) {
   const [position, setPosition] = useState(initialPosition);
   const [playing, setPlaying] = useState(false);
@@ -74,13 +77,10 @@ export function SimulatedPlayer({
 
   return (
     <div className={theaterMode ? "fixed inset-0 z-50 grid place-items-center bg-black p-3 sm:p-8" : ""}>
-      <div className={`relative isolate overflow-hidden bg-[#0a0911] text-white shadow-2xl ${theaterMode ? "h-full max-h-[min(78vw,52rem)] w-full max-w-[96rem] rounded-3xl" : "aspect-video w-full rounded-[1.5rem] sm:rounded-[2rem]"}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(154,140,225,.22),transparent_35%),linear-gradient(145deg,#161426,#08070d_70%)]" />
-        <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.04)_1px,transparent_1px)] [background-size:48px_48px]" />
-        <div className="absolute left-1/2 top-[45%] h-[38%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-[48%_48%_40%_40%] border border-white/15 bg-gradient-to-b from-violet-200/25 to-violet-900/5 shadow-[0_0_90px_rgba(168,150,235,.18)]" />
-        <div className="absolute left-1/2 top-[35%] h-8 w-8 -translate-x-1/2 rounded-full bg-white/60 shadow-[0_0_32px_rgba(255,255,255,.75)]" />
+      <div className={`group relative isolate overflow-hidden border border-white/10 bg-[#0a0911] text-white shadow-2xl ${theaterMode ? "h-full max-h-[min(78vw,52rem)] w-full max-w-[96rem] rounded-xl" : "aspect-video w-full rounded-xl"}`}>
+        {imageUrl ? <Image src={imageUrl} alt="" fill preload sizes="(max-width: 1280px) 100vw, 900px" className="object-cover opacity-80" /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(154,140,225,.22),transparent_35%),linear-gradient(145deg,#161426,#08070d_70%)]" />}
 
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between bg-gradient-to-b from-black/70 to-transparent p-4 pb-16 sm:p-6">
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between bg-gradient-to-b from-black/70 to-transparent p-4 pb-16 opacity-0 transition group-hover:opacity-100 sm:p-6">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/55">Simulated player</p>
             <h2 className="mt-1 text-sm font-bold sm:text-base">{title} · Episode {episode}</h2>
@@ -91,13 +91,13 @@ export function SimulatedPlayer({
         <button
           type="button"
           onClick={() => setPlaying((current) => !current)}
-          className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur-xl transition hover:scale-105 hover:bg-white/25 sm:h-20 sm:w-20"
+          className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-[#c7bef6]/80 text-[#312a58] opacity-0 shadow-2xl backdrop-blur-xl transition hover:scale-105 group-hover:opacity-100 sm:h-20 sm:w-20"
           aria-label={playing ? "Pause episode" : "Play episode"}
         >
           {playing ? <Pause size={26} fill="currentColor" /> : <Play size={28} fill="currentColor" className="translate-x-0.5" />}
         </button>
 
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-4 pb-4 pt-20 sm:px-6 sm:pb-6">
+        <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/10 bg-[#14121b]/55 p-4 backdrop-blur-xl">
           <label className="block">
             <span className="sr-only">Playback position</span>
             <input
