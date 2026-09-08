@@ -17,6 +17,27 @@ async function expectNoAccessibilityViolations(page: Page) {
   expect(results.violations).toEqual([]);
 }
 
+test("public homepage offers an accessible responsive hero and demo entry", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Your next story starts here." })).toBeVisible();
+  await expect(page).toHaveURL("/");
+  await expectNoAccessibilityViolations(page);
+  await page.screenshot({ path: "test-results/home-desktop.png", fullPage: true });
+  await page.getByRole("link", { name: "Take a look" }).click();
+  await expect(page).toHaveURL("/#features");
+  await expect(page.getByRole("heading", { name: "A home for your watchlist." })).toBeInViewport();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expectNoAccessibilityViolations(page);
+  await page.screenshot({ path: "test-results/home-mobile.png", fullPage: true });
+  await page.getByRole("link", { name: "Explore Sabame" }).click();
+  await expect(page).toHaveURL("/login");
+  await page.getByRole("button", { name: "Try demo instantly" }).click();
+  await expect(page).toHaveURL("/dashboard");
+});
+
 test("header search accepts typing, exposes focus and supports result navigation", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await logIn(page);
