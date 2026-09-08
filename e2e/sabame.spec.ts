@@ -17,6 +17,35 @@ async function expectNoAccessibilityViolations(page: Page) {
   expect(results.violations).toEqual([]);
 }
 
+test("header search accepts typing, exposes focus and supports result navigation", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await logIn(page);
+  const search = page.getByRole("combobox", { name: "Search anime" });
+  await search.click();
+  await expect(search).toHaveCSS("cursor", "text");
+  await expect(search.locator("..")).not.toHaveCSS("box-shadow", "none");
+  await search.fill("Cyberpunk");
+  await expect(search).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("option")).toHaveCount(1);
+  await search.press("ArrowDown");
+  await expect(page.getByRole("option")).toHaveAttribute("aria-selected", "true");
+  await expectNoAccessibilityViolations(page);
+  await page.screenshot({ path: "test-results/header-search.png" });
+  await search.press("Enter");
+  await expect(page).toHaveURL("/watch/neon-requiem");
+  await search.fill("no-such-title");
+  await expect(page.getByRole("status").filter({ hasText: "No anime found" })).toBeVisible();
+  await page.getByRole("button", { name: "Clear anime search" }).click();
+  await expect(search).toHaveValue("");
+  await expect(search).toBeFocused();
+  await search.fill("Frieren");
+  await search.press("Escape");
+  await expect(search).toHaveAttribute("aria-expanded", "false");
+  await search.press("ArrowDown");
+  await page.getByRole("listbox", { name: "Anime results" }).getByRole("option").click();
+  await expect(page).toHaveURL("/watch/skyward-bloom");
+});
+
 test("demo login reaches an accessible dashboard", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByRole("heading", { name: "Sabame" })).toBeVisible();

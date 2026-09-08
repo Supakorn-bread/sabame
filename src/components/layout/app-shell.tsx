@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Home, Library, LogOut, Search, Sparkles } from "lucide-react";
+import { CalendarDays, Home, Library, LogOut, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { useTrackerStore } from "@/features/tracker/store";
 import { LoadingScreen } from "../loading-screen";
 import { Logo } from "../logo";
 import { ThemeToggle } from "../theme-toggle";
+import { HeaderSearch } from "./header-search";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -82,9 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/library" className="glass-panel hidden h-10 w-52 items-center rounded-full px-3 text-xs text-[var(--text-faint)] lg:flex">
-              <Search size={14} className="mr-2" /><span>Browse & search library</span>
-            </Link>
+            <HeaderSearch key={pathname} />
             <ThemeToggle compact />
             <details className="relative" onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
               <summary aria-label="Account" className="relative h-11 w-11 cursor-pointer list-none overflow-hidden rounded-full border border-[var(--border-strong)]">
