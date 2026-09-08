@@ -42,8 +42,7 @@ export default function LoginPage() {
       <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--bg-lowest)] py-8">
         <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-6 md:flex-row">
           <Logo compact />
-          <nav aria-label="Footer" className="flex flex-wrap justify-center gap-5 text-xs text-[var(--text-soft)]"><a href="#discord">Discord</a><a href="#github">GitHub</a><a href="#privacy">Privacy Policy</a><a href="#activity">Group Activity</a></nav>
-          <p className="text-center text-xs text-[var(--text-soft)]">© 2026 Sabame. Powered by MyAnimeList.</p>
+          <p className="text-center text-xs text-[var(--text-soft)]">Sabame demo · Your watchlist stays in this browser.</p>
         </div>
       </footer>
     </div>

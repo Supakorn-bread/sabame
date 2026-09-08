@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CalendarDays, Home, Library, LogOut, Search, Sparkles } from "lucide-react";
+import { CalendarDays, Home, Library, LogOut, Search, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -44,9 +44,9 @@ function Footer() {
       <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-4 sm:px-6 md:flex-row">
         <Logo compact />
         <nav aria-label="Footer" className="flex flex-wrap justify-center gap-5 text-[0.7rem] font-medium text-[var(--text-soft)]">
-          <a href="#discord">Discord</a><a href="#github">GitHub</a><a href="#privacy">Privacy Policy</a><a href="#activity">Group Activity</a>
+          <Link href="/library">My library</Link><Link href="/schedule">Watch schedule</Link>
         </nav>
-        <p className="text-center text-[0.68rem] text-[var(--text-soft)]">© 2026 Sabame. Powered by MyAnimeList.</p>
+        <p className="text-center text-[0.68rem] text-[var(--text-soft)]">Sabame demo · Your watchlist stays in this browser.</p>
       </div>
     </footer>
   );
@@ -83,16 +83,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link href="/library" className="glass-panel hidden h-10 w-52 items-center rounded-full px-3 text-xs text-[var(--text-faint)] lg:flex">
-              <Search size={14} className="mr-2" /><span>Search anime...</span>
+              <Search size={14} className="mr-2" /><span>Browse & search library</span>
             </Link>
             <ThemeToggle compact />
-            <button type="button" className="grid h-10 w-10 place-items-center rounded-full text-[var(--text-soft)] transition hover:bg-[var(--primary-soft)] hover:text-[var(--primary)]" aria-label="Notifications">
-              <Bell size={18} />
-            </button>
-            <button type="button" onClick={handleLogout} className="group relative h-10 w-10 overflow-hidden rounded-full border border-[var(--border-strong)]" aria-label="Log out">
-              <Image src={STITCH_ASSETS.avatar} alt="" fill sizes="40px" className="object-cover transition group-hover:scale-105" />
-              <span className="absolute inset-0 grid place-items-center bg-black/55 text-white opacity-0 transition group-hover:opacity-100"><LogOut size={15} /></span>
-            </button>
+            <details className="relative" onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}>
+              <summary aria-label="Account" className="relative h-11 w-11 cursor-pointer list-none overflow-hidden rounded-full border border-[var(--border-strong)]">
+                <Image src={STITCH_ASSETS.avatar} alt="" fill sizes="44px" className="object-cover" />
+              </summary>
+              <div className="absolute right-0 mt-3 w-64 rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] p-4 shadow-xl">
+                <p className="truncate text-sm font-bold">{session.displayName}</p>
+                <p className="mt-1 text-xs text-[var(--text-soft)]">Demo account · Saved on this device</p>
+                <button type="button" onClick={handleLogout} className="mt-3 flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm hover:bg-[var(--primary-soft)]"><LogOut size={16} />Sign out</button>
+              </div>
+            </details>
           </div>
         </div>
       </header>

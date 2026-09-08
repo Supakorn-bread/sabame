@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleUserRound, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 import type { CredentialErrors } from "@/features/tracker/types";
@@ -30,6 +30,7 @@ export function LoginForm({ onLogin, onAuthenticated }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      <p className="mb-5 rounded-lg bg-[var(--primary-soft)] p-3 text-xs leading-5 text-[var(--text-soft)]">Explore the demo with any valid email and a password of at least 6 characters. Use a made-up password; no account is created.</p>
       <div className="mb-4">
         <label htmlFor="email" className="mb-1 block text-[0.7rem] font-medium uppercase tracking-[0.08em] text-[var(--text-soft)]">Email</label>
         <input id="email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "email-error" : undefined} placeholder="Enter your email" className="input-underline w-full py-2 text-sm placeholder:text-[var(--text-faint)]" />
@@ -42,18 +43,14 @@ export function LoginForm({ onLogin, onAuthenticated }: LoginFormProps) {
         {errors.password && <p id="password-error" className="mt-2 text-xs font-semibold text-rose-400">{errors.password}</p>}
       </div>
 
-      <div className="mb-4 mt-5 flex items-center justify-between text-xs">
-        <label className="flex cursor-pointer items-center gap-2 text-[var(--text-soft)]"><input type="checkbox" className="accent-[var(--primary-container)]" />Remember me</label>
-        <a href="#forgot" className="text-[var(--primary)]">Forgot Password?</a>
-      </div>
+      <p className="mb-4 mt-5 text-xs text-[var(--text-soft)]">Your demo session and watchlist are remembered in this browser.</p>
 
       <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--primary-container)] py-3 text-sm font-bold text-[#312a58] transition hover:-translate-y-0.5 hover:bg-[#e5deff]">
         <LogIn size={16} /> Sign In
       </button>
 
-      <div className="my-6 flex items-center gap-4"><span className="h-px flex-1 bg-[var(--border-strong)]" /><span className="text-[0.68rem] uppercase text-[var(--text-soft)]">Or</span><span className="h-px flex-1 bg-[var(--border-strong)]" /></div>
-      <button type="button" className="flex w-full items-center justify-center gap-3 rounded-lg border border-[var(--border-strong)] py-3 text-sm transition hover:-translate-y-0.5 hover:bg-[var(--primary-soft)]"><CircleUserRound size={17} />Login with MyAnimeList</button>
-      <p className="mt-7 text-center text-xs text-[var(--text-soft)]">Don&apos;t have an account? <a href="#signup" className="text-[var(--primary)]">Sign up</a></p>
+      <button type="button" onClick={() => { const result = onLogin("viewer@example.com", "demo123"); if (result.success) onAuthenticated(); else setErrors(result.errors); }} className="mt-3 min-h-11 w-full rounded-lg border border-[var(--border-strong)] text-sm hover:bg-[var(--primary-soft)]">Try demo instantly</button>
+      <p className="mt-5 text-center text-xs text-[var(--text-soft)]">MyAnimeList connection is not available in this demo.</p>
     </form>
   );
 }
