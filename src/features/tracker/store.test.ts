@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { StateStorage } from "zustand/middleware";
 
 import { createTrackerStore, TRACKER_STORAGE_KEY } from "./store";
+import type { MalLibraryResponse, MalListStatus, MalUser } from "@/features/mal/types";
+import type { Anime, LibraryEntry } from "./types";
 
 function memoryStorage(initialValue?: string): StateStorage & { value: string | null; lastName: string | null } {
   return {
@@ -22,6 +24,19 @@ function memoryStorage(initialValue?: string): StateStorage & { value: string | 
       this.value = null;
     },
   };
+}
+
+const malUser = (id: number): MalUser => ({ id, name: `viewer-${id}` });
+const remote = (watched = 0): MalListStatus => ({
+  status: "watching", num_episodes_watched: watched, score: 8, is_rewatching: true,
+  updated_at: "2026-09-15T10:00:00.000Z",
+});
+const malAnime = (id: number): Anime => ({
+  id: `mal-${id}`, title: `Anime ${id}`, subtitle: "", synopsis: "", genres: [],
+  totalEpisodes: 12, episodeMinutes: 24, accent: "violet", score: "7.9",
+});
+function libraryResponse(user: MalUser, entries: Array<{ anime: Anime; entry: LibraryEntry; remote: MalListStatus }> = []): MalLibraryResponse {
+  return { user, items: entries, operations: [], imported: true, lastSyncedAt: "2026-09-15T10:00:00.000Z" };
 }
 
 describe("tracker store", () => {
@@ -107,5 +122,71 @@ describe("tracker store", () => {
 
     expect(store.getState().session).toBeNull();
     expect(store.getState().library["skyward-bloom"]).toEqual(seededProgress);
+  });
+
+  it("isolates demo progress and every MAL account", () => {
+    const storage = memoryStorage();
+    const store = createTrackerStore({ storage, createOperationId: () => "account-operation" });
+    store.getState().setPlaybackPosition("skyward-bloom", 901);
+    const demoProgress = store.getState().library["skyward-bloom"];
+    const anime = malAnime(101);
+    const entry: LibraryEntry = {
+      animeId: anime.id, status: "watching", watchedEpisodes: 2, currentEpisode: 3,
+      playbackSeconds: 0, personalScore: 8, isRewatching: true, updatedAt: "2026-09-15T10:00:00.000Z",
+    };
+
+    let version = store.getState().beginMalBootstrap();
+    store.getState().activateMalAccount(version, true, malUser(1));
+    store.getState().applyMalLibrary(version, libraryResponse(malUser(1), [{ anime, entry, remote: remote(2) }]));
+    store.getState().setWatchedEpisodes(anime.id, 3);
+    expect(store.getState().malSync.operations).toHaveLength(1);
+
+    store.getState().clearMalAccount();
+    expect(store.getState().library["skyward-bloom"]).toEqual(demoProgress);
+    version = store.getState().beginMalBootstrap();
+    store.getState().activateMalAccount(version, true, malUser(2));
+    store.getState().applyMalLibrary(version, libraryResponse(malUser(2)));
+    expect(store.getState().library).toEqual({});
+
+    version = store.getState().beginMalBootstrap();
+    store.getState().activateMalAccount(version, true, malUser(1));
+    expect(store.getState().library[anime.id].watchedEpisodes).toBe(3);
+    expect(store.getState().malSync.operations[0].changes).toEqual({ watchedEpisodes: 3 });
+
+    const restored = createTrackerStore({ storage });
+    expect(restored.getState().malUser).toBeNull();
+    expect(restored.getState().session?.malUserId).toBeUndefined();
+    expect(restored.getState().library["skyward-bloom"]).toEqual(demoProgress);
+    expect(restored.getState().malAccounts["1"].library[anime.id].watchedEpisodes).toBe(3);
+  });
+
+  it("queues only explicit canonical MAL edits", async () => {
+    let notifications = 0;
+    const ids = ["status-id", "progress-id", "complete-id"];
+    const store = createTrackerStore({
+      storage: memoryStorage(),
+      createOperationId: () => ids.shift() ?? "extra-id",
+      onMalOperation: () => { notifications += 1; },
+    });
+    const user = malUser(1);
+    const anime = malAnime(202);
+    const version = store.getState().beginMalBootstrap();
+    store.getState().activateMalAccount(version, true, user);
+    store.getState().registerAnime(anime);
+    store.getState().ensureEntry(anime.id);
+    store.getState().selectEpisode(anime.id, 2);
+    store.getState().setPlaybackPosition(anime.id, 120, 1_440, 2);
+    store.getState().registerAnime({ ...anime, id: "local-title" });
+    expect(store.getState().malSync.operations).toEqual([]);
+
+    store.getState().setStatus(anime.id, "on_hold");
+    store.getState().setWatchedEpisodes(anime.id, 4);
+    store.getState().markEpisodeComplete(anime.id, 99);
+    expect(store.getState().malSync.operations.map(({ id, changes }) => ({ id, changes }))).toEqual([
+      { id: "status-id", changes: { status: "on_hold" } },
+      { id: "progress-id", changes: { watchedEpisodes: 4 } },
+    ]);
+    await Promise.resolve();
+    expect(notifications).toBe(2);
   });
 });

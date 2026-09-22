@@ -1,4 +1,4 @@
-export type LibraryStatus = "watching" | "planned" | "completed";
+export type LibraryStatus = "watching" | "planned" | "completed" | "on_hold" | "dropped";
 
 export type AnimeAccent = "violet" | "cyan" | "rose" | "amber" | "indigo" | "emerald";
 
@@ -8,7 +8,7 @@ export interface Anime {
   subtitle: string;
   synopsis: string;
   genres: string[];
-  totalEpisodes: number;
+  totalEpisodes: number | null;
   episodeMinutes: number;
   accent: AnimeAccent;
   coverUrl?: string;
@@ -22,13 +22,19 @@ export interface LibraryEntry {
   watchedEpisodes: number;
   currentEpisode: number;
   playbackSeconds: number;
+  playbackDurationSeconds?: number;
+  personalScore?: number;
+  isRewatching?: boolean;
   updatedAt: string;
 }
 
 export interface DemoSession {
-  email: string;
+  email?: string;
   displayName: string;
   loginAt: string;
+  malUserId?: number;
+  username?: string;
+  picture?: string;
 }
 
 export interface CredentialErrors {

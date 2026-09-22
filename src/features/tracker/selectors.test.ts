@@ -22,7 +22,18 @@ describe("tracker selectors", () => {
       watching: 3,
       planned: 2,
       completed: 1,
+      on_hold: 0,
+      dropped: 0,
     });
+  });
+
+  it("counts and filters on-hold and dropped entries", () => {
+    const library = createSeedLibrary();
+    library["skyward-bloom"] = { ...library["skyward-bloom"], status: "on_hold" };
+    library["neon-requiem"] = { ...library["neon-requiem"], status: "dropped" };
+
+    expect(getLibraryCounts(library)).toMatchObject({ watching: 1, on_hold: 1, dropped: 1 });
+    expect(filterLibrary(library, "on_hold", "").map(({ anime }) => anime.id)).toEqual(["skyward-bloom"]);
   });
 
   it("returns the latest activity with matching anime data", () => {

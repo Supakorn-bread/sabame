@@ -23,7 +23,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   );
 
   if (!mounted) {
-    return <div className={compact ? "h-10 w-10" : "h-10 w-[8.25rem]"} aria-hidden="true" />;
+    return <div className={compact ? "h-11 w-11" : "h-[54px] w-[142px]"} aria-hidden="true" />;
   }
 
   if (compact) {
@@ -35,7 +35,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => setTheme(nextTheme.value)}
-        className="grid h-10 w-10 place-items-center rounded-full border border-[var(--border)] bg-[var(--panel)] text-[var(--text-soft)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+        className="grid h-11 w-11 place-items-center rounded-full border border-[var(--border)] bg-[var(--panel)] text-[var(--text-soft)] transition hover:border-[var(--border-strong)] hover:text-[var(--text)]"
         aria-label={`Theme: ${theme}. Switch to ${nextTheme.value}.`}
       >
         <Icon size={17} />
@@ -50,7 +50,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
           key={value}
           type="button"
           onClick={() => setTheme(value)}
-          className={`grid h-8 w-10 place-items-center rounded-full transition ${
+          className={`grid h-11 w-11 place-items-center rounded-full transition ${
             theme === value
               ? "bg-[var(--primary-soft)] text-[var(--primary)]"
               : "text-[var(--text-faint)] hover:text-[var(--text)]"

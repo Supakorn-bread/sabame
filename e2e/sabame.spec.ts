@@ -1,11 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/anime/*", (route) => route.fulfill({ status: 503, json: { error: { code: "fixture_metadata_unavailable" } } }));
+  await page.route("**/api/anime/search?*", (route) => route.fulfill({ json: { results: [] } }));
+});
+
 async function logIn(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("Email").fill("viewer@example.com");
-  await page.getByLabel("Password", { exact: true }).fill("secret1");
-  await page.getByRole("button", { name: "Sign In" }).click();
+  await page.getByRole("button", { name: "Try demo instantly" }).click();
   await expect(page).toHaveURL("/dashboard");
 }
 
@@ -73,7 +76,16 @@ test("demo login reaches an accessible dashboard", async ({ page }) => {
   await expectNoAccessibilityViolations(page);
 
   await logIn(page);
-  await expect(page.getByRole("heading", { name: "Frieren: Beyond Journey's End" })).toBeVisible();
+  const feature = page.locator('section[aria-labelledby="currently-watching-title"]');
+  const featureArtwork = feature.getByRole("img", { name: "Frieren: Beyond Journey's End artwork" });
+  const featureTitle = feature.getByRole("heading", { name: "Frieren: Beyond Journey's End" });
+  const featureBadge = feature.getByText("Currently Watching", { exact: true });
+  await expect(featureArtwork).toBeVisible();
+  await expect(featureTitle).toBeVisible();
+  const [artworkBox, titleBox, badgeBox] = await Promise.all([featureArtwork.boundingBox(), featureTitle.boundingBox(), featureBadge.boundingBox()]);
+  expect(artworkBox?.x).toBeLessThan(titleBox?.x ?? Number.POSITIVE_INFINITY);
+  expect(Math.abs((artworkBox?.y ?? 0) - (badgeBox?.y ?? 0))).toBeLessThan(16);
+  expect(artworkBox?.width).toBeGreaterThan(220);
   await expectNoAccessibilityViolations(page);
 });
 
@@ -128,6 +140,7 @@ test("search, filters, and account actions are usable", async ({ page }) => {
   await expect(page).toHaveURL("/dashboard");
   await page.getByLabel("Account", { exact: true }).click();
   await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Connect MyAnimeList" })).toHaveAttribute("href", "/api/auth/mal/start");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Sign out" })).toBeHidden();
   await page.goto("/library");
@@ -147,6 +160,11 @@ test("search, filters, and account actions are usable", async ({ page }) => {
 test("watch page exposes every episode and visible keyboard player controls", async ({ page }) => {
   await logIn(page);
   await page.goto("/watch/skyward-bloom");
+  const poster = page.locator('section[aria-label="Frieren: Beyond Journey\'s End player"] .bg-cover');
+  await expect(poster).toHaveCSS("background-image", /cdn\.myanimelist\.net/);
+  const previewSources = await page.locator("main img").evaluateAll((images) => images.map((image) => image.getAttribute("src")));
+  expect(previewSources.length).toBeGreaterThan(0);
+  expect(previewSources.every((src) => src?.includes("cdn.myanimelist.net") && !src.includes("aida-public"))).toBe(true);
   await page.getByRole("button", { name: "Episode 28", exact: false }).click();
   await expect(page.getByRole("button", { name: "Episode 28 Selected" })).toHaveAttribute("aria-current", "true");
   const play = page.getByRole("button", { name: "Play episode", exact: true }).first();

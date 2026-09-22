@@ -25,10 +25,9 @@ export function ComingSoon({ eyebrow, title, description, variant }: ComingSoonP
           <p className="mt-6 max-w-xl text-base leading-8 text-[var(--text-soft)]">{description}</p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary-container)] px-5 py-3 text-sm font-extrabold text-[#312a58]"><ArrowLeft size={16} /> Back home</Link>
-            <Link href="/library" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] px-5 py-3 text-sm font-extrabold hover:border-[var(--border-strong)]">Browse library</Link>
+            <Link href="/search" className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)] px-5 py-3 text-sm font-extrabold hover:border-[var(--border-strong)]">Find anime</Link>
           </div>
         </div>
-        <p className="relative self-end text-xs font-bold text-[var(--text-faint)]">Intentional MVP placeholder · Your existing tracker remains fully available.</p>
       </section>
     </AppShell>
   );

@@ -9,7 +9,7 @@ import type {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function clamp(value: number, minimum: number, maximum: number) {
-  return Math.min(maximum, Math.max(minimum, value));
+  return Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, value)) : minimum;
 }
 
 export function validateDemoCredentials(email: string, password: string): CredentialValidation {
@@ -34,14 +34,15 @@ export function setWatchedEpisodes(
   watchedEpisodes: number,
   updatedAt: string,
 ): LibraryEntry {
-  const watched = clamp(Math.floor(watchedEpisodes), 0, anime.totalEpisodes);
+  const watched = clamp(Math.floor(watchedEpisodes), 0, anime.totalEpisodes ?? 10_000);
   const isComplete = watched === anime.totalEpisodes;
 
   return {
     ...entry,
     watchedEpisodes: watched,
-    currentEpisode: isComplete ? anime.totalEpisodes : clamp(watched + 1, 1, anime.totalEpisodes),
+    currentEpisode: isComplete ? anime.totalEpisodes! : clamp(watched + 1, 1, anime.totalEpisodes ?? 10_000),
     playbackSeconds: 0,
+    playbackDurationSeconds: undefined,
     status: isComplete ? "completed" : entry.status === "completed" ? "watching" : entry.status,
     updatedAt,
   };
@@ -52,10 +53,13 @@ export function setPlaybackPosition(
   anime: Anime,
   playbackSeconds: number,
   updatedAt: string,
+  durationSeconds?: number,
 ): LibraryEntry {
   return {
     ...entry,
-    playbackSeconds: clamp(Math.floor(playbackSeconds), 0, anime.episodeMinutes * 60),
+    playbackSeconds: clamp(Math.floor(playbackSeconds), 0, durationSeconds && Number.isFinite(durationSeconds) ? durationSeconds : entry.playbackDurationSeconds ?? (anime.episodeMinutes * 60 || 86400)),
+    status: entry.status === "planned" && playbackSeconds > 0 ? "watching" : entry.status,
+    playbackDurationSeconds: durationSeconds && Number.isFinite(durationSeconds) ? durationSeconds : entry.playbackDurationSeconds,
     updatedAt,
   };
 }
@@ -68,8 +72,9 @@ export function selectEpisode(
 ): LibraryEntry {
   return {
     ...entry,
-    currentEpisode: clamp(Math.floor(episode), 1, anime.totalEpisodes),
+    currentEpisode: clamp(Math.floor(episode), 1, anime.totalEpisodes ?? 10_000),
     playbackSeconds: 0,
+    playbackDurationSeconds: undefined,
     status: "watching",
     updatedAt,
   };
@@ -79,15 +84,16 @@ export function completeEpisode(entry: LibraryEntry, anime: Anime, updatedAt: st
   const watchedEpisodes = clamp(
     Math.max(entry.watchedEpisodes, entry.currentEpisode),
     0,
-    anime.totalEpisodes,
+    anime.totalEpisodes ?? 10_000,
   );
   const completed = watchedEpisodes === anime.totalEpisodes;
 
   return {
     ...entry,
     watchedEpisodes,
-    currentEpisode: completed ? anime.totalEpisodes : watchedEpisodes + 1,
+    currentEpisode: completed ? anime.totalEpisodes! : watchedEpisodes + 1,
     playbackSeconds: 0,
+    playbackDurationSeconds: undefined,
     status: completed ? "completed" : "watching",
     updatedAt,
   };
