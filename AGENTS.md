@@ -8,6 +8,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+# Guidance
+
+For new lead sessions, the desired configuration is gpt-6-astra with reasoning_effort: high where supported. This file expresses a preferred configuration; it does not identify or switch the active runtime. Keep Astra hands-on for difficult, important, or reasoning-heavy work, and use gpt-5.6-sol helpers for bounded work when delegation is useful.
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization
@@ -40,3 +44,9 @@ Add tests for each behavior change, including failure paths and persistence boun
 ## Commit & Pull Request Guidelines
 
 Use short, imperative Conventional Commit subjects such as `feat: add daily tracker` or `fix: improve theme contrast`. Keep commits focused. Pull requests should summarize behavior, list verification commands, link relevant issues, and include screenshots for visual changes. Call out new environment variables, migrations, and known follow-up work.
+
+# Agent Roles and Delegation
+
+The Astra lead owns requirement clarity, planning, complex reasoning, hands-on difficult work, documentation/specification verification, output QA, and the final user report. Before production, verify applicable documentation, especially docs/art-requirements.md; the lead approves specifications before costly generation. Never treat a preview as a native asset without passing the documented native gates.
+
+Delegate immediately when appropriate; individual user approval is not required. Notify the user of delegated scope, use only the helpers needed, and inspect their results. Assign gpt-5.6-sol a task-appropriate effort for bounded, independent implementation, research, art generation, scripting, or testing. Helpers must report evidence including file paths, commands, results, sources, and limitations. Leaf agents should ask the lead before recursive delegation to control cost unless recursive delegation was expressly assigned.

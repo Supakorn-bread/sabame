@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = process.env.PLAYWRIGHT_PORT ?? "3000";
+const port = process.env.PLAYWRIGHT_PORT ?? "3100";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -20,7 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `node node_modules/next/dist/bin/next dev --webpack -p ${port}`,
+    command: `npm run build -- --webpack && npm run start -- --port ${port}`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
