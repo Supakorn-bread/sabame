@@ -1,0 +1,48 @@
+{
+  "scope": "Initial live integration smoke through Sabame API; not a playback or timing certification",
+  "redaction": "No tickets, source URLs, private headers or subtitle content retained",
+  "results": [
+    {
+      "checkedAt": "2026-09-11T17:19:26.144Z",
+      "animeId": "skyward-bloom",
+      "episodeNumber": 1,
+      "metadataStatus": 502,
+      "resolveStatus": 502,
+      "errorCode": "upstream_unavailable",
+      "thaiStatus": "unknown",
+      "playbackVerified": false,
+      "timingVerified": false
+    },
+    {
+      "checkedAt": "2026-09-11T17:19:27.287Z",
+      "animeId": "mal-40748",
+      "title": "Jujutsu Kaisen",
+      "episodeNumber": 1,
+      "metadataStatus": 200,
+      "resolveStatus": 502,
+      "errorCode": "episode_unavailable",
+      "thaiStatus": "unknown",
+      "playbackVerified": false,
+      "timingVerified": false
+    },
+    {
+      "checkedAt": "2026-09-11T17:19:30.056Z",
+      "animeId": "mal-16498",
+      "title": "Attack on Titan",
+      "episodeNumber": 1,
+      "provider": "animeparadise",
+      "metadataStatus": 200,
+      "resolveStatus": 200,
+      "deliveryStatus": 200,
+      "manifestVerified": true,
+      "thaiStatus": "absent_in_returned_tracks",
+      "tracks": [
+        { "language": "en", "label": "English", "format": "vtt", "availability": "available", "syncStatus": "unverified" },
+        { "language": "pt", "label": "Portuguese", "format": "vtt", "availability": "available", "syncStatus": "unverified" },
+        { "language": "es", "label": "Spanish", "format": "vtt", "availability": "available", "syncStatus": "unverified" }
+      ],
+      "playbackVerified": false,
+      "timingVerified": false
+    }
+  ]
+}

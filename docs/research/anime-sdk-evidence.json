@@ -1,0 +1,1772 @@
+{
+  "scope": "Live SDK research; not a playback or synchronization certification",
+  "sdk": {
+    "version": "1.1.0 (source package.json)",
+    "commit": "72d734f1f9bc6d59183ead2fcb0f172ad6018cdf"
+  },
+  "method": {
+    "transport": "FetchTransport with ordinary provider headers; no cookies, proxies, retries, challenge solving or video downloads",
+    "redaction": "URLs reduced to hosts/extensions; no signed stream URLs, tokens, subtitle text, or video content stored",
+    "validation": "Only the first response chunk was inspected for HLS/WebVTT signatures where urlChecks are present. Full parsing, browser playback and timing were not tested."
+  },
+  "runs": [
+    {
+      "name": "initial",
+      "checkedAt": "2026-09-10T10:53:56.770Z",
+      "results": [
+        {
+          "provider": "animeparadise",
+          "query": "Frieren",
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/anime/NIUsb960SxtXls4h/episode",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/ep/bed82e58-72ec-4427-8900-9e6273e5e24d",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Italian",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Portuguese",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Spanish",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Italian",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Spanish",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "resolved",
+          "stage": "resolve",
+          "episodeCount": 28,
+          "episode": {
+            "id": "animeparadise:bed82e58-72ec-4427-8900-9e6273e5e24d:NIUsb960SxtXls4h",
+            "title": "The Journey's End",
+            "number": 1,
+            "availableLanguages": [
+              "sub"
+            ]
+          },
+          "streamType": "video",
+          "streams": [
+            {
+              "video": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "isHLS": true,
+              "quality": "auto",
+              "language": "sub",
+              "headerNames": [
+                "Referer"
+              ],
+              "subtitles": [
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "en",
+                  "label": "English",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "it",
+                  "label": "Italian",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "es",
+                  "label": "Spanish",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "thaiFound": false,
+          "selected": {
+            "id": "animeparadise:NIUsb960SxtXls4h",
+            "title": "Frieren: Beyond Journey’s End"
+          },
+          "searchResults": [
+            {
+              "id": "animeparadise:NIUsb960SxtXls4h",
+              "title": "Frieren: Beyond Journey’s End"
+            },
+            {
+              "id": "animeparadise:6700659058be9f1ea1bbfe50",
+              "title": "Frieren: Beyond Journey’s End Season 2"
+            }
+          ]
+        },
+        {
+          "provider": "animeparadise",
+          "query": "Cyberpunk: Edgerunners",
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "search",
+          "error": "NO_UNAMBIGUOUS_TITLE_MATCH",
+          "searchResults": []
+        },
+        {
+          "provider": "animeparadise",
+          "query": "Jujutsu Kaisen",
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/anime/IKgbjdf8gZs0u4Fh/episode",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/ep/ee7868e7-d280-4126-9bfb-46b137a292c3",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "resolved",
+          "stage": "resolve",
+          "episodeCount": 35,
+          "episode": {
+            "id": "animeparadise:ee7868e7-d280-4126-9bfb-46b137a292c3:IKgbjdf8gZs0u4Fh",
+            "title": "Ryomen Sukuna",
+            "number": 1,
+            "availableLanguages": [
+              "sub"
+            ]
+          },
+          "streamType": "video",
+          "streams": [
+            {
+              "video": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "isHLS": true,
+              "quality": "auto",
+              "language": "sub",
+              "headerNames": [
+                "Referer"
+              ],
+              "subtitles": [
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "en",
+                  "label": "English",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "thaiFound": false,
+          "selected": {
+            "id": "animeparadise:IKgbjdf8gZs0u4Fh",
+            "title": "JUJUTSU KAISEN"
+          },
+          "searchResults": [
+            {
+              "id": "animeparadise:IKgbjdf8gZs0u4Fh",
+              "title": "JUJUTSU KAISEN"
+            },
+            {
+              "id": "animeparadise:E8rjQS8jYwW2K6pF",
+              "title": "JUJUTSU KAISEN Season 2"
+            },
+            {
+              "id": "animeparadise:sA2bWUWV9swO1Vwv",
+              "title": "JUJUTSU KAISEN 0"
+            },
+            {
+              "id": "animeparadise:6599db7e0ba6576110e83354",
+              "title": "JUJUTSU KAISEN Season 3: The Culling Game Part 1"
+            }
+          ]
+        },
+        {
+          "provider": "megaplay",
+          "query": "Frieren",
+          "requests": [
+            {
+              "host": "graphql.anilist.co",
+              "path": "/",
+              "status": 403,
+              "contentType": "application/json"
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "search",
+          "error": "HTTP_403 at graphql.anilist.co/"
+        },
+        {
+          "provider": "megaplay",
+          "query": "Cyberpunk: Edgerunners",
+          "requests": [
+            {
+              "host": "graphql.anilist.co",
+              "path": "/",
+              "status": 403,
+              "contentType": "application/json"
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "search",
+          "error": "HTTP_403 at graphql.anilist.co/"
+        },
+        {
+          "provider": "megaplay",
+          "query": "Jujutsu Kaisen",
+          "requests": [
+            {
+              "host": "graphql.anilist.co",
+              "path": "/",
+              "status": 403,
+              "contentType": "application/json"
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "search",
+          "error": "HTTP_403 at graphql.anilist.co/"
+        },
+        {
+          "provider": "anikoto",
+          "query": "Frieren",
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "anikotoapi.site",
+              "path": "/series/6351",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/s-2/107257/sub",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/getSources",
+              "status": 200,
+              "contentType": "application/json",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Arabic",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind",
+                    "default"
+                  ],
+                  "label": "English",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "French",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "German",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Italian",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Portuguese (- Portuguese(Brazil))",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Russian",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Spanish",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Spanish (- Spanish(Latin America))",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "resolve",
+          "episodeCount": 28,
+          "episode": {
+            "id": "anikoto:107257",
+            "title": "The Journey&#39;s End",
+            "number": 1,
+            "availableLanguages": [
+              "sub",
+              "dub"
+            ]
+          },
+          "error": "No video sources found in megaplay response",
+          "selected": {
+            "id": "anikoto:6351",
+            "title": "Frieren: Beyond Journey's End"
+          },
+          "searchResults": [
+            {
+              "id": "anikoto:6180",
+              "title": "Sousou no Frieren - Marumaru no Mahou (Mini Anime)"
+            },
+            {
+              "id": "anikoto:8384",
+              "title": "Frieren: Beyond Journey's End Season 2"
+            },
+            {
+              "id": "anikoto:6351",
+              "title": "Frieren: Beyond Journey's End"
+            }
+          ]
+        },
+        {
+          "provider": "anikoto",
+          "query": "Cyberpunk: Edgerunners",
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "anikotoapi.site",
+              "path": "/series/5789",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/s-2/93955/sub",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/getSources",
+              "status": 200,
+              "contentType": "application/json",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind",
+                    "default"
+                  ],
+                  "label": "English",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "English 2",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "resolve",
+          "episodeCount": 10,
+          "episode": {
+            "id": "anikoto:93955",
+            "title": "Let You Down",
+            "number": 1,
+            "availableLanguages": [
+              "sub",
+              "dub"
+            ]
+          },
+          "error": "No video sources found in megaplay response",
+          "selected": {
+            "id": "anikoto:5789",
+            "title": "Cyberpunk: Edgerunners"
+          },
+          "searchResults": [
+            {
+              "id": "anikoto:5789",
+              "title": "Cyberpunk: Edgerunners"
+            }
+          ]
+        },
+        {
+          "provider": "anikoto",
+          "query": "Jujutsu Kaisen",
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "search",
+          "error": "NO_UNAMBIGUOUS_TITLE_MATCH",
+          "searchResults": [
+            {
+              "id": "anikoto:6688",
+              "title": "Jujutsu Kaisen 0 Movie"
+            },
+            {
+              "id": "anikoto:1103",
+              "title": "Jujutsu Kaisen (TV)"
+            },
+            {
+              "id": "anikoto:8584",
+              "title": "Jujutsu Kaisen: Hidden Inventory/Premature Death"
+            },
+            {
+              "id": "anikoto:6542",
+              "title": "Jujutsu Kaisen 2nd Season"
+            },
+            {
+              "id": "anikoto:8386",
+              "title": "Jujutsu Kaisen 3rd Season: The Culling Game Part 1"
+            },
+            {
+              "id": "anikoto:6358",
+              "title": "Jujutsu Kaisen: Specials"
+            },
+            {
+              "id": "anikoto:5376",
+              "title": "Wakusei Robo Danguard Ace: Uchuu Daikaisen"
+            },
+            {
+              "id": "anikoto:5899",
+              "title": "Dr. Stone: Stone Wars Eve of the Battle Special Feature"
+            },
+            {
+              "id": "anikoto:2414",
+              "title": "Horizon in the Middle of Nowhere"
+            },
+            {
+              "id": "anikoto:706",
+              "title": "Horizon in the Middle of Nowhere II"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "followup",
+      "checkedAt": "2026-09-10T10:55:58.515Z",
+      "results": [
+        {
+          "provider": "animeparadise",
+          "query": "Cyberpunk",
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "search",
+          "error": "NO_UNAMBIGUOUS_TITLE_MATCH",
+          "searchResults": []
+        },
+        {
+          "provider": "animeparadise",
+          "query": "Jujutsu Kaisen",
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/anime/IKgbjdf8gZs0u4Fh/episode",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/ep/ee7868e7-d280-4126-9bfb-46b137a292c3",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "resolved",
+          "stage": "resolve",
+          "episodeCount": 35,
+          "episode": {
+            "id": "animeparadise:ee7868e7-d280-4126-9bfb-46b137a292c3:IKgbjdf8gZs0u4Fh",
+            "title": "Ryomen Sukuna",
+            "number": 1,
+            "availableLanguages": [
+              "sub"
+            ]
+          },
+          "streamType": "video",
+          "streams": [
+            {
+              "video": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "isHLS": true,
+              "quality": "auto",
+              "language": "sub",
+              "headerNames": [
+                "Referer"
+              ],
+              "subtitles": [
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "en",
+                  "label": "English",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "thaiFound": false,
+          "urlChecks": [
+            {
+              "kind": "manifest",
+              "url": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "status": 200,
+              "contentType": "application/x-mpegURL",
+              "isHls": true,
+              "isVtt": false
+            },
+            {
+              "kind": "subtitle",
+              "url": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "status": 200,
+              "contentType": "application/octet-stream",
+              "isHls": false,
+              "isVtt": true
+            }
+          ],
+          "selected": {
+            "id": "animeparadise:IKgbjdf8gZs0u4Fh",
+            "title": "JUJUTSU KAISEN"
+          },
+          "searchResults": [
+            {
+              "id": "animeparadise:IKgbjdf8gZs0u4Fh",
+              "title": "JUJUTSU KAISEN"
+            },
+            {
+              "id": "animeparadise:E8rjQS8jYwW2K6pF",
+              "title": "JUJUTSU KAISEN Season 2"
+            },
+            {
+              "id": "animeparadise:sA2bWUWV9swO1Vwv",
+              "title": "JUJUTSU KAISEN 0"
+            },
+            {
+              "id": "animeparadise:6599db7e0ba6576110e83354",
+              "title": "JUJUTSU KAISEN Season 3: The Culling Game Part 1"
+            }
+          ]
+        },
+        {
+          "provider": "animeparadise",
+          "query": "Attack on Titan",
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/anime/1eo7qphaV6XBgerx/episode",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/ep/d15c9139-c303-4d5d-95bc-3f3427c7a24e",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Italian",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Spanish",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Portuguese",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "ass",
+                  "url": {
+                    "invalidUrl": true
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Portuguese",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "Spanish",
+                  "type": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "resolved",
+          "stage": "resolve",
+          "episodeCount": 25,
+          "episode": {
+            "id": "animeparadise:d15c9139-c303-4d5d-95bc-3f3427c7a24e:1eo7qphaV6XBgerx",
+            "title": "To You, in 2000 Years: The Fall of Shiganshina (1)",
+            "number": 1,
+            "availableLanguages": [
+              "sub"
+            ]
+          },
+          "streamType": "video",
+          "streams": [
+            {
+              "video": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "isHLS": true,
+              "quality": "auto",
+              "language": "sub",
+              "headerNames": [
+                "Referer"
+              ],
+              "subtitles": [
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "en",
+                  "label": "English",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "pt",
+                  "label": "Portuguese",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                },
+                {
+                  "keys": [
+                    "url",
+                    "label",
+                    "language",
+                    "format"
+                  ],
+                  "language": "es",
+                  "label": "Spanish",
+                  "format": "vtt",
+                  "url": {
+                    "host": "stream.animeparadise.moe",
+                    "extension": null
+                  }
+                }
+              ]
+            }
+          ],
+          "thaiFound": false,
+          "urlChecks": [
+            {
+              "kind": "manifest",
+              "url": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "status": 200,
+              "contentType": "application/x-mpegURL",
+              "isHls": true,
+              "isVtt": false
+            },
+            {
+              "kind": "subtitle",
+              "url": {
+                "host": "stream.animeparadise.moe",
+                "extension": null
+              },
+              "status": 200,
+              "contentType": "application/octet-stream",
+              "isHls": false,
+              "isVtt": true
+            }
+          ],
+          "selected": {
+            "id": "animeparadise:1eo7qphaV6XBgerx",
+            "title": "Attack on Titan"
+          },
+          "searchResults": [
+            {
+              "id": "animeparadise:d9FieOUgc99q49sM",
+              "title": "Attack on Titan Season 2"
+            },
+            {
+              "id": "animeparadise:05mdX1RMVIFoyOud",
+              "title": "Attack on Titan Season 3"
+            },
+            {
+              "id": "animeparadise:1eo7qphaV6XBgerx",
+              "title": "Attack on Titan"
+            },
+            {
+              "id": "animeparadise:S6ZQKFkz0ghaTfGv",
+              "title": "Attack on Titan Final Season Part 2"
+            },
+            {
+              "id": "animeparadise:kqxern3eddOVGAxv",
+              "title": "Attack on Titan Final Season"
+            },
+            {
+              "id": "animeparadise:ydIBzzSKYB9hloZ2",
+              "title": "Attack on Titan Season 3 Part 2"
+            }
+          ]
+        },
+        {
+          "provider": "anikoto",
+          "query": "Cyberpunk",
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "anikotoapi.site",
+              "path": "/series/5789",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/s-2/93955/sub",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/getSources",
+              "status": 200,
+              "contentType": "application/json",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind",
+                    "default"
+                  ],
+                  "label": "English",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "English 2",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "resolve",
+          "episodeCount": 10,
+          "episode": {
+            "id": "anikoto:93955",
+            "title": "Let You Down",
+            "number": 1,
+            "availableLanguages": [
+              "sub",
+              "dub"
+            ]
+          },
+          "error": "No video sources found in megaplay response",
+          "selected": {
+            "id": "anikoto:5789",
+            "title": "Cyberpunk: Edgerunners"
+          },
+          "searchResults": [
+            {
+              "id": "anikoto:5789",
+              "title": "Cyberpunk: Edgerunners"
+            },
+            {
+              "id": "anikoto:6624",
+              "title": "Demon Lord 2099"
+            }
+          ]
+        },
+        {
+          "provider": "anikoto",
+          "query": "Jujutsu Kaisen",
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "anikotoapi.site",
+              "path": "/series/1103",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/s-2/10789/sub",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/getSources",
+              "status": 200,
+              "contentType": "application/json",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Arabic",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind",
+                    "default"
+                  ],
+                  "label": "English",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "French (- Francais(France))",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "German (- Deutsch)",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Italian (- Italiano)",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Portuguese (- Portugues(Brasil))",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Russian",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Spanish (- Espanol)",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Spanish (- Espanol(Espana))",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "resolve",
+          "episodeCount": 24,
+          "episode": {
+            "id": "anikoto:10789",
+            "title": "Ryomen Sukuna",
+            "number": 1,
+            "availableLanguages": [
+              "sub",
+              "dub"
+            ]
+          },
+          "error": "No video sources found in megaplay response",
+          "selected": {
+            "id": "anikoto:1103",
+            "title": "Jujutsu Kaisen (TV)"
+          },
+          "searchResults": [
+            {
+              "id": "anikoto:6688",
+              "title": "Jujutsu Kaisen 0 Movie"
+            },
+            {
+              "id": "anikoto:1103",
+              "title": "Jujutsu Kaisen (TV)"
+            },
+            {
+              "id": "anikoto:8584",
+              "title": "Jujutsu Kaisen: Hidden Inventory/Premature Death"
+            },
+            {
+              "id": "anikoto:6542",
+              "title": "Jujutsu Kaisen 2nd Season"
+            },
+            {
+              "id": "anikoto:8386",
+              "title": "Jujutsu Kaisen 3rd Season: The Culling Game Part 1"
+            },
+            {
+              "id": "anikoto:6358",
+              "title": "Jujutsu Kaisen: Specials"
+            },
+            {
+              "id": "anikoto:5376",
+              "title": "Wakusei Robo Danguard Ace: Uchuu Daikaisen"
+            },
+            {
+              "id": "anikoto:5899",
+              "title": "Dr. Stone: Stone Wars Eve of the Battle Special Feature"
+            },
+            {
+              "id": "anikoto:2414",
+              "title": "Horizon in the Middle of Nowhere"
+            },
+            {
+              "id": "anikoto:706",
+              "title": "Horizon in the Middle of Nowhere II"
+            }
+          ]
+        },
+        {
+          "provider": "anikoto",
+          "query": "Attack on Titan",
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "anikotoapi.site",
+              "path": "/series/1631",
+              "status": 200,
+              "contentType": "application/json; charset=utf-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/s-2/3303/sub",
+              "status": 200,
+              "contentType": "text/html; charset=UTF-8"
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/getSources",
+              "status": 200,
+              "contentType": "application/json",
+              "rawTracks": [
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind",
+                    "default"
+                  ],
+                  "label": "English",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "English 2",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "English (- (Crunchyroll))",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Portuguese",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                },
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind"
+                  ],
+                  "label": "Spanish",
+                  "kind": "captions",
+                  "url": {
+                    "host": "cdn.imgnex.top",
+                    "extension": "vtt"
+                  }
+                }
+              ]
+            }
+          ],
+          "status": "blocked_or_failed",
+          "stage": "resolve",
+          "episodeCount": 25,
+          "episode": {
+            "id": "anikoto:3303",
+            "title": "To You Two Thousand Years Later",
+            "number": 1,
+            "availableLanguages": [
+              "sub",
+              "dub"
+            ]
+          },
+          "error": "No video sources found in megaplay response",
+          "selected": {
+            "id": "anikoto:1631",
+            "title": "Attack on Titan"
+          },
+          "searchResults": [
+            {
+              "id": "anikoto:1024",
+              "title": "Attack on Titan OVA"
+            },
+            {
+              "id": "anikoto:6694",
+              "title": "Attack on Titan: Final Season, Part 2"
+            },
+            {
+              "id": "anikoto:1585",
+              "title": "Attack on Titan Season 3"
+            },
+            {
+              "id": "anikoto:5687",
+              "title": "Attack on Titan: Final Season, Part 1"
+            },
+            {
+              "id": "anikoto:6476",
+              "title": "Attack on Titan: The Final Season Part 3"
+            },
+            {
+              "id": "anikoto:1367",
+              "title": "Attack on Titan: No Regrets"
+            },
+            {
+              "id": "anikoto:1631",
+              "title": "Attack on Titan"
+            },
+            {
+              "id": "anikoto:2916",
+              "title": "Attack on Titan: Junior High"
+            },
+            {
+              "id": "anikoto:1385",
+              "title": "Attack on Titan Season 2"
+            },
+            {
+              "id": "anikoto:7624",
+              "title": "Attack on Titan: The Last Attack"
+            },
+            {
+              "id": "anikoto:473",
+              "title": "Attack on Titan: Lost Girls"
+            },
+            {
+              "id": "anikoto:233",
+              "title": "Attack on Titan: Crimson Bow and Arrow"
+            },
+            {
+              "id": "anikoto:507",
+              "title": "Attack on Titan: Wings of Freedom"
+            },
+            {
+              "id": "anikoto:1788",
+              "title": "Attack on Titan: Chronicle"
+            },
+            {
+              "id": "anikoto:2",
+              "title": "Loner Life in Another World"
+            },
+            {
+              "id": "anikoto:23",
+              "title": "The Do-Over Damsel Conquers The Dragon Emperor"
+            },
+            {
+              "id": "anikoto:3387",
+              "title": "Attack No.1"
+            },
+            {
+              "id": "anikoto:5227",
+              "title": "Do You Love Your Mom and Her Two-Hit Multi-Target Attacks?"
+            },
+            {
+              "id": "anikoto:4270",
+              "title": "Attack on Tomorrow"
+            },
+            {
+              "id": "anikoto:256",
+              "title": "Yahari Ore no Seishun Love Comedy wa Machigatteiru. OVA"
+            },
+            {
+              "id": "anikoto:1280",
+              "title": "Tomorrow's Joe"
+            },
+            {
+              "id": "anikoto:1792",
+              "title": "Corpse Princess: Kuro"
+            },
+            {
+              "id": "anikoto:2304",
+              "title": "Inari Kon Kon"
+            },
+            {
+              "id": "anikoto:3072",
+              "title": "Digimon Frontier: Island of Lost Digimon"
+            },
+            {
+              "id": "anikoto:3584",
+              "title": "One Punch Man 2nd Season Commemorative Special"
+            },
+            {
+              "id": "anikoto:3840",
+              "title": "MegaMan: Wishing upon a Star"
+            },
+            {
+              "id": "anikoto:4096",
+              "title": "Arifureta: From Commonplace to World's Strongest"
+            },
+            {
+              "id": "anikoto:4352",
+              "title": "Ryu the Primitive Boy"
+            },
+            {
+              "id": "anikoto:4608",
+              "title": "Yamishibai: Japanese Ghost Stories 7"
+            },
+            {
+              "id": "anikoto:4864",
+              "title": "Shironeko Project ZERO CHRONICLE"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "season-2",
+      "checkedAt": "2026-09-11T04:43:27.341Z",
+      "results": [
+        {
+          "provider": "animeparadise",
+          "query": "Frieren",
+          "season": 2,
+          "episodeNumber": 1,
+          "requests": [
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/search",
+              "status": 200
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/anime/6700659058be9f1ea1bbfe50/episode",
+              "status": 200
+            },
+            {
+              "host": "api.animeparadise.moe",
+              "path": "/ep/c458da24-7d8f-416b-bbf1-564d1117ef94",
+              "status": 200,
+              "responseKeys": [
+                "success",
+                "error",
+                "data"
+              ],
+              "sourcePresent": false,
+              "tracks": [
+                {
+                  "keys": [
+                    "src",
+                    "label",
+                    "type"
+                  ],
+                  "label": "English",
+                  "type": "vtt",
+                  "host": "stream.animeparadise.moe"
+                }
+              ]
+            }
+          ],
+          "episodeCount": 10,
+          "unit": {
+            "id": "animeparadise:c458da24-7d8f-416b-bbf1-564d1117ef94:6700659058be9f1ea1bbfe50",
+            "title": "Shall We Go, Then?",
+            "number": 1,
+            "availableLanguages": [
+              "sub"
+            ]
+          },
+          "status": "resolved",
+          "type": "video",
+          "streams": [
+            {
+              "isHLS": true,
+              "subtitles": [
+                {
+                  "language": "en",
+                  "label": "English",
+                  "format": "vtt",
+                  "host": "stream.animeparadise.moe"
+                }
+              ]
+            }
+          ],
+          "selected": {
+            "id": "animeparadise:6700659058be9f1ea1bbfe50",
+            "title": "Frieren: Beyond Journey’s End Season 2"
+          }
+        },
+        {
+          "provider": "anikoto",
+          "query": "Frieren",
+          "season": 2,
+          "episodeNumber": 1,
+          "requests": [
+            {
+              "host": "anikototv.to",
+              "path": "/filter",
+              "status": 200
+            },
+            {
+              "host": "anikotoapi.site",
+              "path": "/series/8384",
+              "status": 200
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/s-2/163517/sub",
+              "status": 200
+            },
+            {
+              "host": "megaplay.buzz",
+              "path": "/stream/getSources",
+              "status": 200,
+              "responseKeys": [
+                "tracks",
+                "t",
+                "intro",
+                "outro",
+                "server",
+                "enc"
+              ],
+              "sourcePresent": false,
+              "tracks": [
+                {
+                  "keys": [
+                    "file",
+                    "label",
+                    "kind",
+                    "default"
+                  ],
+                  "label": "English",
+                  "kind": "captions",
+                  "host": "cdn.imgnex.top"
+                }
+              ]
+            }
+          ],
+          "episodeCount": 10,
+          "unit": {
+            "id": "anikoto:163517",
+            "title": "Episode 1",
+            "number": 1,
+            "availableLanguages": [
+              "sub",
+              "dub"
+            ]
+          },
+          "status": "failed",
+          "error": "No video sources found in megaplay response",
+          "selected": {
+            "id": "anikoto:8384",
+            "title": "Frieren: Beyond Journey's End Season 2"
+          }
+        }
+      ]
+    }
+  ]
+}

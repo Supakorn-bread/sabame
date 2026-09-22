@@ -14,17 +14,20 @@ const accentStyles: Record<Anime["accent"], string> = {
 interface AnimeArtworkProps {
   anime: Anime;
   variant?: "cover" | "hero" | "thumb";
+  fit?: "cover" | "contain";
   className?: string;
   priority?: boolean;
+  sizes?: string;
 }
 
-export function AnimeArtwork({ anime, variant = "cover", className = "", priority = false }: AnimeArtworkProps) {
+export function AnimeArtwork({ anime, variant = "cover", fit = "cover", className = "", priority = false, sizes: requestedSizes }: AnimeArtworkProps) {
   const imageUrl = variant === "hero" ? anime.heroUrl ?? anime.coverUrl : anime.coverUrl;
-  const sizes = variant === "hero" ? "(max-width: 768px) 100vw, 1400px" : variant === "thumb" ? "128px" : "(max-width: 640px) 50vw, 240px";
+  const sizes = requestedSizes ?? (variant === "hero" ? "240px" : variant === "thumb" ? "128px" : "(max-width: 640px) 50vw, 240px");
+  const imageFit = fit === "contain" ? "object-contain object-center" : variant === "hero" ? "object-contain object-right" : "object-cover object-center";
 
   return (
     <div role="img" aria-label={`${anime.title} artwork`} className={`relative isolate overflow-hidden bg-gradient-to-br ${accentStyles[anime.accent]} ${className}`}>
-      {imageUrl && <Image src={imageUrl} alt="" fill preload={priority} sizes={sizes} className="object-cover transition-transform duration-700 group-hover:scale-105" />}
+      {imageUrl && <Image src={imageUrl} alt="" fill preload={priority} quality={85} sizes={sizes} className={`${imageFit} ${fit === "contain" ? "" : "transition-transform duration-200 motion-safe:group-hover:scale-105"}`} />}
       {!imageUrl && <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(255,255,255,.35),transparent_3%),linear-gradient(145deg,transparent,rgba(0,0,0,.4))]" />}
     </div>
   );
