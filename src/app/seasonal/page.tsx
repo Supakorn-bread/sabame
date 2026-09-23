@@ -1,7 +1,10 @@
-import { ComingSoon } from "@/components/coming-soon";
+import { connection } from "next/server";
+import { SeasonalBrowser } from "@/components/seasonal/seasonal-browser";
+import { currentSeason } from "@/features/seasonal/model";
 
 export const metadata = { title: "Seasonal" };
 
-export default function SeasonalPage() {
-  return <ComingSoon eyebrow="Coming next" title="A season worth exploring." description="Seasonal browsing is not available yet. You can already search for anime and track titles in your library." variant="seasonal" />;
+export default async function SeasonalPage() {
+  await connection();
+  return <SeasonalBrowser current={currentSeason()} />;
 }
