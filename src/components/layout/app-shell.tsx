@@ -14,6 +14,7 @@ import { Logo } from "../logo";
 import { MalSyncStatus } from "../mal-sync-status";
 import { ThemeToggle } from "../theme-toggle";
 import { HeaderSearch } from "./header-search";
+import { ScrollHeader } from "./scroll-header";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
@@ -146,7 +147,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell flex min-h-dvh flex-col pt-20">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <header className="glass-nav fixed inset-x-0 top-0 z-50">
+      <ScrollHeader>
         <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-8">
             <div className="app-header-brand shrink-0"><Logo /></div>
@@ -183,7 +184,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-      </header>
+      </ScrollHeader>
 
       {storageWarning && <div className="mx-auto mt-4 w-full max-w-[1440px] px-4 sm:px-6"><div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200" role="status">Browser storage was unavailable, so Sabame restored the demo watchlist for this visit.</div></div>}
       <MalSyncStatus />

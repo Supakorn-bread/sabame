@@ -1,0 +1,27 @@
+.scroll-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 50;
+  background: var(--bg);
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.scroll-header[data-transparent-at-top="true"][data-sticky="false"] {
+  background: transparent;
+  box-shadow: none;
+}
+
+.scroll-header[data-sticky="true"] {
+  position: fixed;
+  box-shadow: 0 1px 0 var(--border), 0 8px 24px rgb(0 0 0 / 6%);
+  animation: scroll-header-enter 220ms ease-out both;
+}
+
+@keyframes scroll-header-enter {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-header[data-sticky="true"] { animation: none; }
+}

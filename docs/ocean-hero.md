@@ -16,10 +16,13 @@ Mode: built-in image generation; new illustration, encoded into the workspace as
 
 ## Verification
 
+All navigation headers share the same scroll behavior: after scrolling past the original 80px bar, the same navigation becomes fixed with a short entrance animation. It stays fixed while scrolling back up until the top is reached. Header backgrounds are opaque in both themes, except the homepage header before it becomes sticky. The login page also uses the public navigation with an opaque background. Reduced motion disables the entrance animation; the feature anchor leaves room for the bar. Application pages retain their reserved header space and page-content fade.
 
 - `npm test`
 - `npm run lint`
 - `npm run typecheck`
 - `npm run test:e2e -- e2e/ocean-hero.spec.ts e2e/sabame.spec.ts`
+- `npm run test:e2e -- e2e/home-header.spec.ts`
+- `npm run test:e2e -- e2e/top-navigation.spec.ts`
 
 The browser runner builds production with Webpack. Tests cover the new image, reversible day/night transitions without image swapping, moving pixels in the surface and underwater lighting regions, reduced motion, mobile and wide-screen layout, normal scrolling and accessibility in both themes.

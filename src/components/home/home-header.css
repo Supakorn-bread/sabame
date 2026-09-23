@@ -1,0 +1,5 @@
+/* Change solid-header text at the same time as its theme background. */
+.ocean-home .ocean-home-header[data-sticky="true"],
+.ocean-home .ocean-home-header[data-sticky="true"] :is(a, button) {
+  transition-duration: 0s;
+}

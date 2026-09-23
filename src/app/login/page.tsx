@@ -8,7 +8,7 @@ import { LoadingScreen } from "@/components/loading-screen";
 import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
 import { SabameMark } from "@/components/sabame-mark";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { HomeHeader } from "@/components/home/home-header";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
 import { useTrackerStore } from "@/features/tracker/store";
 
@@ -29,10 +29,10 @@ function LoginContent() {
   if (!hasHydrated || !authReady || session && !malError) return <LoadingScreen label="Preparing Sabame" />;
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-hidden pt-20">
       {ANIME_CATALOG[0].coverUrl && <Image src={ANIME_CATALOG[0].coverUrl} alt="" fill preload sizes="100vw" className="fixed inset-0 -z-10 scale-105 object-cover opacity-[0.15] blur-[8px]" />}
       <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[38rem] w-[38rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(199,190,246,.1),transparent_70%)]" />
-      <div className="absolute right-4 top-4 z-20"><ThemeToggle compact /></div>
+      <HomeHeader transparentAtTop={false} showEntry={false} />
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
         <section className="glass-panel w-full max-w-md rounded-xl p-8" aria-labelledby="login-title">
