@@ -148,10 +148,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell flex min-h-dvh flex-col pt-20">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <ScrollHeader>
-        <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
-          <div className="flex min-w-0 items-center gap-8">
-            <div className="app-header-brand shrink-0"><Logo /></div>
-            <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
+        <div className="site-header-inner mx-auto flex h-20 items-center justify-between gap-2 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-4 lg:gap-8">
+            <div className="shrink-0"><Logo label="Sabame home" /></div>
+            <nav aria-label="Primary" className="hidden items-center gap-3 lg:gap-6 md:flex">
               {navigation.map((item) => <NavigationLink key={item.href} {...item} />)}
             </nav>
           </div>

@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { ScrollHeader } from "@/components/layout/scroll-header";
 
-import { SabameMark } from "@/components/sabame-mark";
+import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import "./home-header.css";
@@ -17,18 +17,9 @@ export function HomeHeader({ transparentAtTop = true, showEntry = true }: {
     <ScrollHeader className="ocean-home-header" transparentAtTop={transparentAtTop}>
       <nav
         aria-label="Homepage"
-        className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-5 sm:px-10"
+        className="site-header-inner mx-auto flex h-20 items-center justify-between"
       >
-        <Link
-          href="/"
-          aria-label="Sabame home"
-          className="inline-flex items-center gap-1 text-2xl font-extrabold tracking-[-0.05em] sm:text-3xl"
-        >
-          <SabameMark className="h-10 w-10 sm:h-12 sm:w-12" />
-          <span>
-            Sabame<span className="text-[var(--primary)]">.</span>
-          </span>
-        </Link>
+        <Logo label="Sabame home" />
         <div className="flex items-center gap-2 sm:gap-7">
           <Link href="/search" className="hidden min-h-11 items-center text-sm sm:flex">
             Discover

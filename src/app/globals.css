@@ -3,6 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  --site-edge-gutter: clamp(1.25rem, 6.5vw, 7rem);
   --bg: #f9f9f9;
   --bg-lowest: #ffffff;
   --bg-low: #f3f3f4;
@@ -94,11 +95,7 @@ button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
   padding-bottom: calc(5.75rem + env(safe-area-inset-bottom));
 }
 
-.app-header-brand > a { font-size: 2rem; }
-
-@media (max-width: 380px) {
-  .app-header-brand > a { font-size: 1.5rem; }
-}
+.site-header-inner { width: 100%; padding-inline: var(--site-edge-gutter); }
 
 #main-content { scroll-margin-top: 5.5rem; }
 
@@ -232,8 +229,4 @@ button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
 @media (min-width: 48rem) {
   html { scroll-padding-bottom: 2rem; }
   .app-shell { padding-bottom: 0; }
-}
-
-@media (min-width: 64rem) {
-  .app-header-brand > a { font-size: 3rem; }
 }

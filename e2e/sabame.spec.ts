@@ -50,7 +50,7 @@ test("mascot branding fits narrow homepage and application headers", async ({ pa
   const theme = page.getByRole("button", { name: /^Theme:/ });
   expect((await homeBrand.boundingBox())!.x + (await homeBrand.boundingBox())!.width).toBeLessThanOrEqual((await theme.boundingBox())!.x);
   await logIn(page);
-  const brand = page.locator("header").getByRole("link", { name: "Sabame", exact: true });
+  const brand = page.locator("header").getByRole("link", { name: "Sabame home", exact: true });
   await expect(brand.locator("img")).toHaveAttribute("src", /sabame-mark/);
   const find = page.getByRole("link", { name: "Find anime", exact: true });
   expect((await brand.boundingBox())!.x + (await brand.boundingBox())!.width).toBeLessThanOrEqual((await find.boundingBox())!.x);

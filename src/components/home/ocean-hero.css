@@ -267,7 +267,7 @@
   position: absolute;
   z-index: 8;
   top: max(104px, 12vh);
-  left: clamp(1.5rem, 6.5vw, 7rem);
+  left: var(--site-edge-gutter);
   width: min(43rem, 47vw);
   transition: color 1800ms ease;
 }
@@ -430,7 +430,7 @@
   .ocean-hero__poster--deep-c { top: 75%; left: 63%; }
   .ocean-hero__content {
     top: 104px;
-    left: 1.25rem;
+    left: var(--site-edge-gutter);
     width: min(54%, 15rem);
   }
   .ocean-hero__eyebrow {
