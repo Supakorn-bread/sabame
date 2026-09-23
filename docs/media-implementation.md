@@ -5,12 +5,12 @@ This implements the approved aggregator/player plan. Read [source investigation]
 ## Architecture and source flow
 
 ```text
-Local catalog + MalMeta/Jikan search
+Local catalog + official MAL metadata (MalMeta/Jikan without MAL_CLIENT_ID)
   → canonical mal-<id> or existing seed ID
   → metadata and episode selection
   → user presses Play
   → POST /api/anime/<id>/media
-  → SDK MappingClient + exact title/season checks
+  → deduplicated SDK provider searches for MAL titles/synonyms + exact title/season checks
   → AnimeParadiseProvider.fetchContentUnits()
   → unique, exact episode number
   → AnimeParadiseProvider.resolveStream(unitUrn, "sub", options)
@@ -21,6 +21,17 @@ Local catalog + MalMeta/Jikan search
 ```
 
 Provider extraction stays in `anime-sdk@1.1.0`. `src/features/media/server/sdk.ts` explicitly uses `FetchTransport`, disables SDK retries and external mapping services, and never uses curl/cookie fallback. The SDK is isolated behind `server-only` imports. `providers.ts` wraps the real SDK interface; it does not copy extraction logic.
+
+With `MAL_CLIENT_ID` configured, both catalog search and playback details use official MAL v2. Details preserve English, original/native titles, synonyms, release year and episode count, and validate the returned MAL ID. This avoids the Jikan full-details/episode-pagination dependency for imported accounts. Without that configuration, the existing SDK metadata path remains. Metadata failures are retryable and are not cached or reported as an absent video source.
+
+Unmapped titles search up to four distinct aliases concurrently through the SDK. Selection requires one exact title/alias match, a compatible year and the existing exact episode/count checks. A second fuzzy mapping pass is no longer required. Ambiguous seasons or duplicate episode numbers remain rejected; adding an anime from MAL does not guarantee that the enabled provider carries it.
+
+### MAL playback investigation — 22 September 2026
+
+- `mal-51179` (Mushoku Tensei Season 2), episode 1: the old metadata path returned HTTP 502. With official MAL details, metadata, media resolution and manifest delivery returned HTTP 200. `mal-16498` (Attack on Titan), episode 1 also passed those live checks. These checks verify manifest reachability, not full provider-video playback or subtitle timing.
+- Reported example `mal-59131` (As a Reincarnated Aristocrat… Season 2), episode 1: official MAL metadata returns 12 episodes. AnimeParadise returns no results for the English, original or synonym title. Broader searches return only Season 1 (`animeparadise:BV5670WT5AIWOcj3`), whose 12 episodes begin with “Reincarnation and Appraisal”; it must not substitute for Season 2.
+- Alternate SDK probes found exact Season 2 entries on Anikoto (`anikoto:6627`) and Allmanga (`allmanga:5Ybejzg26CyepMEA6`), each with episodes 1–12. Anikoto failed stream resolution with `No video sources found in megaplay response`; Allmanga returned no source URLs for episode 1/sub. Neither is enabled as a fallback without verified video delivery.
+- Validation: lint, TypeScript, 174 unit/component tests, the webpack production build and all 7 MAL/media Playwright checks passed. The added imported-library browser regression uses the synthetic fixture to verify canonical ID, episode 6, metadata-error retry and actual browser playback. It is not evidence of live availability for `mal-59131`.
 
 Only AnimeParadise is enabled. Anikoto and MegaPlay remain disabled because the investigation did not establish a usable video payload. The registry accepts additional `MediaProvider` adapters; deterministic fallback tests use injected providers. Provider names never determine the winner. SDK audio-track abstraction is absent, so the API does not invent audio metadata.
 

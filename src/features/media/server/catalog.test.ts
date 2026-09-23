@@ -1,11 +1,54 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("./sdk", () => ({ metadataProvider: { search: vi.fn(), fetchMediaInfo: vi.fn() } }));
 import { metadataProvider } from "./sdk";
 import { catalogAnime, fetchMetadata, getCatalogDetail, searchCatalog } from "./catalog";
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("MAL_CLIENT_ID", ""); });
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+
+describe("official MAL playback metadata", () => {
+  it("loads canonical details with alternate titles without calling Jikan", async () => {
+    vi.stubEnv("MAL_CLIENT_ID", "test-client");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+      id: 51179, title: "Mushoku Tensei II: Isekai Ittara Honki Dasu", num_episodes: 12,
+      alternative_titles: { en: "Mushoku Tensei: Jobless Reincarnation Season 2", ja: "無職転生 II", synonyms: ["Mushoku Tensei 2", "", 123] },
+      start_date: "2023-07-10", nsfw: "white",
+    })));
+    await expect(fetchMetadata("mal-51179", new AbortController().signal)).resolves.toMatchObject({
+      id: "mal:anime:51179", mappings: { mal: 51179 }, episodeCount: 12, year: 2023,
+      title: { english: "Mushoku Tensei: Jobless Reincarnation Season 2", romaji: "Mushoku Tensei II: Isekai Ittara Honki Dasu", native: "無職転生 II" },
+      synonyms: ["Mushoku Tensei 2"],
+    });
+    expect(metadataProvider.fetchMediaInfo).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining("/v2/anime/51179?"), expect.objectContaining({ cache: "no-store", headers: expect.objectContaining({ "X-MAL-CLIENT-ID": "test-client" }) }));
+  });
+
+  it("rejects a response for a different MAL identity", async () => {
+    vi.stubEnv("MAL_CLIENT_ID", "test-client");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ id: 900002, title: "Different season" })));
+    await expect(fetchMetadata("mal-900001", new AbortController().signal)).rejects.toThrow("invalid_metadata");
+  });
+
+  it("distinguishes a metadata outage from a missing source and retries failures", async () => {
+    vi.stubEnv("MAL_CLIENT_ID", "test-client");
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(Response.json({ id: 900003, title: "Recovered title", num_episodes: 0 })));
+    await expect(fetchMetadata("mal-900003", new AbortController().signal)).rejects.toThrow("metadata_unavailable");
+    await expect(fetchMetadata("mal-900003", new AbortController().signal)).resolves.toMatchObject({ episodeCount: undefined });
+  });
+
+  it("rejects explicit adult metadata and missing IDs", async () => {
+    vi.stubEnv("MAL_CLIENT_ID", "test-client");
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(Response.json({ id: 900004, title: "Filtered title", nsfw: "black" }))
+      .mockResolvedValueOnce(new Response(null, { status: 404 })));
+    await expect(fetchMetadata("mal-900004", new AbortController().signal)).rejects.toThrow("anime_not_found");
+    await expect(fetchMetadata("mal-900005", new AbortController().signal)).rejects.toThrow("anime_not_found");
+  });
+});
 
 describe("catalog identity", () => {
   it("uses official MAL v2 search when MAL_CLIENT_ID is configured", async () => {

@@ -45,8 +45,23 @@ describe("SDK provider boundary", () => {
     expect(animeParadise.resolveStream).toHaveBeenCalledWith("animeparadise:episode-1:test", "sub", expect.objectContaining({ strictEpisodeMatching: true, episodeAbsoluteMatching: "never" }));
     expect(result.subtitles?.[0].language).toBe("und");
   });
+  it("resolves an exact MAL synonym without a fuzzy mapping or duplicate searches", async () => {
+    vi.mocked(fetchMetadata).mockResolvedValue({ id: "mal:anime:1", providerId: "mal", catalogType: "ANIME", title: { english: "Official Title", romaji: "Official Title" }, synonyms: ["Test Season 2"], episodeCount: 12 });
+    vi.mocked(mappingClient.resolveProviderMediaId).mockResolvedValue(null);
+    vi.mocked(animeParadise.search).mockImplementation(async (query) => query === "Test Season 2" ? [{ id: "animeparadise:test", title: "Test Season 2", catalogType: "ANIME", providerId: "animeparadise" }] : []);
+    await resolve();
+    expect(animeParadise.search).toHaveBeenCalledTimes(2);
+    expect(animeParadise.resolveStream).toHaveBeenCalledWith("animeparadise:episode-1:test", "sub", expect.any(Object));
+    expect(mappingClient.resolveProviderMediaId).not.toHaveBeenCalled();
+  });
+  it("reports no source only when provider searches finish with no results", async () => {
+    vi.mocked(animeParadise.search).mockResolvedValue([]);
+    await expect(resolve()).rejects.toThrow("no_source");
+    expect(animeParadise.resolveStream).not.toHaveBeenCalled();
+  });
   it("rejects a different season even when the SDK supplies a mapping", async () => {
     vi.mocked(mappingClient.resolveProviderMediaId).mockResolvedValue({ providerId: "animeparadise", rawMediaId: "wrong", matchedTitle: "Test Season 1", method: "fuzzy" });
+    vi.mocked(animeParadise.search).mockResolvedValue([{ id: "animeparadise:wrong", title: "Test Season 1", providerId: "animeparadise", catalogType: "ANIME" }]);
     await expect(resolve()).rejects.toThrow("mapping_required");
     expect(animeParadise.resolveStream).not.toHaveBeenCalled();
   });

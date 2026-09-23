@@ -7,8 +7,12 @@ interface Props {
   onPositionChange: (seconds: number, duration: number) => void; onComplete: () => void;
 }
 const messages: Record<string, string> = {
+  metadata_unavailable: "Anime details are temporarily unavailable. Please retry shortly.",
+  upstream_unavailable: "Anime details are temporarily unavailable. Please retry shortly.",
+  provider_unavailable: "The video provider is temporarily unavailable. Please retry shortly.",
+  timeout: "Finding a source took too long. Please retry.",
   mapping_required: "This title or season could not be matched safely. Try another title.",
-  no_source: "No playable source is available for this title from the current providers.",
+  no_source: "No playable source is available for this title or season from the current providers. Being in your MAL list does not guarantee video availability.",
   episode_unavailable: "This episode is not available from the current providers.",
   source_expired: "This source has expired. Request a fresh source to continue.",
   media_not_configured: "Media delivery needs server configuration.",

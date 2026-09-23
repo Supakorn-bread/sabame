@@ -52,6 +52,18 @@ describe("real media player", () => {
     fireEvent.click(screen.getByRole("button", { name: "Request fresh source" }));
     expect(await screen.findByRole("combobox", { name: "Subtitles" })).toBeVisible();
   });
+  it.each([
+    ["metadata_unavailable", "Anime details are temporarily unavailable"],
+    ["provider_unavailable", "The video provider is temporarily unavailable"],
+    ["timeout", "Finding a source took too long"],
+    ["no_source", "No playable source is available for this title"],
+  ])("explains %s without conflating an outage with a missing title", async (code, message) => {
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: false, json: async () => ({ error: { code } }) } as Response);
+    render(<MediaPlayer {...props()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(screen.getByRole("button", { name: "Request fresh source" })).toBeEnabled();
+  });
   it("aborts old episode requests and ignores their late responses", async () => {
     let complete!: (response: Response) => void;
     vi.mocked(fetch).mockReturnValueOnce(new Promise((resolve) => { complete = resolve; }));

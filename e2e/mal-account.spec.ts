@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 import type { MalLibraryItem, MalListStatus, MalOperation, MalUser } from "../src/features/mal/types";
 
@@ -100,7 +101,7 @@ test("an imported MAL library preserves statuses and personal scores", async ({ 
   await expect(page.locator("article")).toHaveCount(5);
   await expect(page.getByRole("heading", { name: "Mushoku Tensei: Jobless Reincarnation Season 2" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Demon Slayer: Hashira Training Arc" })).toBeVisible();
-  const titleHeights = await page.locator("article h2").evaluateAll((titles) => titles.map((title) => Math.round(title.getBoundingClientRect().height)));
+  const titleHeights = await page.locator("article .library-cover-caption h2").evaluateAll((titles) => titles.map((title) => Math.round(title.getBoundingClientRect().height)));
   expect(new Set(titleHeights).size).toBe(1);
   await expect(page.locator("article").filter({ hasText: "Frieren: Beyond Journey's End" })).toContainText("9/10 yours");
   await expect(page.locator("article").filter({ hasText: "Cyberpunk: Edgerunners" })).toContainText("Completed");
@@ -114,6 +115,37 @@ test("an imported MAL library preserves statuses and personal scores", async ({ 
   await expect(page.locator("article")).toHaveCount(5);
   await expectNoAccessibilityViolations(page);
   await page.screenshot({ path: "test-results/library-mal-imported.png", fullPage: true });
+});
+
+test("an imported MAL title keeps its identity and selected episode through playback retry", async ({ page }) => {
+  await mockCatalog(page);
+  await mockMalLibrary(page);
+  await mockMalSession(page, { signedIn: true });
+  const anime = importedItems[2].anime;
+  await page.route(`**/api/anime/${anime.id}`, (route) => route.fulfill({ json: anime }));
+  await page.route(`**/api/anime/${anime.id}/episodes`, (route) => route.fulfill({ json: { episodes: Array.from({ length: 12 }, (_, i) => ({ number: i + 1 })) } }));
+  const video = await readFile("e2e/fixtures/player.mp4");
+  await page.route("**/fixture/mal-player.mp4", (route) => route.fulfill({ contentType: "video/mp4", body: video }));
+  const requests: number[] = [];
+  await page.route(`**/api/anime/${anime.id}/media`, (route) => {
+    const episodeNumber = route.request().postDataJSON().episodeNumber;
+    requests.push(episodeNumber);
+    if (requests.length === 1) return route.fulfill({ status: 502, json: { error: { code: "metadata_unavailable" } } });
+    return route.fulfill({ json: { provider: "fixture", metadata: { animeId: anime.id, episodeNumber }, video: { url: "/fixture/mal-player.mp4", type: "mp4" }, subtitles: [], thaiStatus: "unknown", selectionReason: "video_only" } });
+  });
+  await page.goto("/library");
+  await page.getByRole("button", { name: `Show details for ${anime.title}` }).click();
+  await page.getByRole("heading", { name: anime.title }).getByRole("link").click();
+  await expect(page).toHaveURL(`/watch/${anime.id}`);
+  await expect(page.getByRole("heading", { name: anime.title })).toBeVisible();
+  expect(requests).toEqual([]);
+  await page.getByRole("button", { name: "Play episode" }).click();
+  await expect(page.locator("main").getByRole("alert")).toContainText("Anime details are temporarily unavailable");
+  await page.getByRole("button", { name: "Request fresh source" }).click();
+  await expect.poll(() => page.locator("video").evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(0);
+  await page.locator("video").evaluate((element: HTMLVideoElement) => element.pause());
+  expect(requests).toEqual([6, 6]);
+  await expect(page).toHaveURL(`/watch/${anime.id}`);
 });
 
 test("MAL progress confirms, conflicts resolve, failures retry, and logout returns to demo data", async ({ page }) => {
@@ -153,6 +185,7 @@ test("MAL progress confirms, conflicts resolve, failures retry, and logout retur
 
   await page.goto("/library");
   const card = page.locator("article").filter({ hasText: "Frieren: Beyond Journey's End" });
+  await card.getByRole("button", { name: "Show details for Frieren: Beyond Journey's End" }).click();
   await card.getByRole("button", { name: "Increase Frieren: Beyond Journey's End watched episodes" }).click();
   await expect(card).toContainText("19 / 28");
   await expect(page.getByLabel("MyAnimeList sync")).toContainText("Synced with MyAnimeList");
@@ -165,6 +198,7 @@ test("MAL progress confirms, conflicts resolve, failures retry, and logout retur
   await expect(page.getByRole("alert").filter({ hasText: "Sync conflict" })).toHaveCount(0);
 
   mode = "fail-once";
+  await card.getByRole("button", { name: "Show details for Frieren: Beyond Journey's End" }).click();
   await card.getByRole("button", { name: "Increase Frieren: Beyond Journey's End watched episodes" }).click();
   await expect(page.getByRole("button", { name: "Retry changes" })).toBeVisible();
   await page.getByRole("button", { name: "Retry changes" }).click();
@@ -184,7 +218,7 @@ test("MAL progress confirms, conflicts resolve, failures retry, and logout retur
   await expect(page).toHaveURL("/dashboard");
   await page.goto("/library");
   await expect(page.getByText("Mushoku Tensei: Jobless Reincarnation Season 2", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("Mushoku Tensei S2", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mushoku Tensei S2", exact: true })).toBeVisible();
 });
 
 test("a MAL account cannot silently add a Sabame demo catalog ID", async ({ page }) => {
