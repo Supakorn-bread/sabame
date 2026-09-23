@@ -10,7 +10,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # Guidance
 
-For new lead sessions, the desired configuration is gpt-6-astra with reasoning_effort: high where supported. This file expresses a preferred configuration; it does not identify or switch the active runtime. Keep Astra hands-on for difficult, important, or reasoning-heavy work, and use gpt-5.6-sol helpers for bounded work when delegation is useful.
+For new lead sessions, use the following model configuration and division of responsibility:
+
+- `gpt-6-astra`, `reasoning_effort: medium`: lead and primary planner. Astra owns requirement clarification, the implementation plan, task breakdown, technical direction, delegation, integration decisions, and the final report to the user.
+- `luna-6`, `reasoning_effort: max`: primary implementer. Luna owns the main coding and implementation work assigned by Astra, including focused changes, tests, and implementation-level verification.
+- `sol-6`, `reasoning_effort: high`: reviewer and verifier. Sol reviews Luna's implementation, checks correctness, regressions, tests, code quality, and requirement coverage, then reports findings and required fixes to Astra.
+
+This file expresses a preferred operating configuration; it does not identify or switch the active runtime. Astra remains accountable for the result and may perform difficult implementation work or resolve issues when the review identifies a problem. Work should normally flow as: Astra plans and delegates -> Luna implements -> Sol reviews and verifies -> Astra decides fixes, integrates, and reports completion.
 
 # Repository Guidelines
 
@@ -47,6 +53,10 @@ Use short, imperative Conventional Commit subjects such as `feat: add daily trac
 
 # Agent Roles and Delegation
 
-The Astra lead owns requirement clarity, planning, complex reasoning, hands-on difficult work, documentation/specification verification, output QA, and the final user report. Before production, verify applicable documentation, especially docs/art-requirements.md; the lead approves specifications before costly generation. Never treat a preview as a native asset without passing the documented native gates.
+The Astra lead owns requirement clarity, planning, complex reasoning, task decomposition, delegation, documentation/specification verification, integration, output QA, and the final user report. Before production, verify applicable documentation, especially docs/art-requirements.md; Astra approves specifications before costly generation. Never treat a preview as a native asset without passing the documented native gates.
 
-Delegate immediately when appropriate; individual user approval is not required. Notify the user of delegated scope, use only the helpers needed, and inspect their results. Assign gpt-5.6-sol a task-appropriate effort for bounded, independent implementation, research, art generation, scripting, or testing. Helpers must report evidence including file paths, commands, results, sources, and limitations. Leaf agents should ask the lead before recursive delegation to control cost unless recursive delegation was expressly assigned.
+When implementation is needed, Astra should delegate the main coding task to Luna-6 with a concrete scope, acceptance criteria, relevant files, and required verification. Luna should implement the change, add or update meaningful tests where required, run the checks appropriate to the change, and report changed files, commands, results, limitations, and open questions.
+
+After Luna reports completion, Astra should send the implementation to Sol-6 for an independent review. Sol should inspect the actual diff and relevant surrounding code, verify requirements and failure paths, run or assess the applicable checks, and report findings ordered by severity with file paths, evidence, and recommended fixes. Sol reviews the work; Luna remains the primary implementer for fixes unless Astra assigns the fix elsewhere.
+
+Astra must inspect Sol's review, decide whether fixes are needed, coordinate another implementation pass and re-review when necessary, and perform the final integration and acceptance decision. Delegation does not require individual user approval. All delegated agents must report evidence including file paths, commands, results, sources when research is involved, and limitations. Leaf agents should ask Astra before recursive delegation unless recursive delegation was expressly assigned.
