@@ -96,6 +96,10 @@ button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
 
 .app-header-brand > a { font-size: 2rem; }
 
+@media (max-width: 380px) {
+  .app-header-brand > a { font-size: 1.5rem; }
+}
+
 #main-content { scroll-margin-top: 5.5rem; }
 
 .mobile-primary-nav {
@@ -230,6 +234,6 @@ button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
   .app-shell { padding-bottom: 0; }
 }
 
-@media (min-width: 40rem) {
+@media (min-width: 64rem) {
   .app-header-brand > a { font-size: 3rem; }
 }

@@ -7,6 +7,7 @@ import { Suspense, useEffect } from "react";
 import { LoadingScreen } from "@/components/loading-screen";
 import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
+import { SabameMark } from "@/components/sabame-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
 import { useTrackerStore } from "@/features/tracker/store";
@@ -36,6 +37,7 @@ function LoginContent() {
       <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
         <section className="glass-panel w-full max-w-md rounded-xl p-8" aria-labelledby="login-title">
           <div className="mb-8 text-center">
+            <SabameMark className="mx-auto mb-2 h-24 w-24" />
             <h1 id="login-title" className="text-5xl font-extrabold tracking-[-0.04em] text-[var(--primary)]">Sabame</h1>
             <p className="mt-2 text-sm text-[var(--text-soft)]">Welcome back to the theater.</p>
           </div>
