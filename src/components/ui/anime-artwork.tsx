@@ -18,16 +18,18 @@ interface AnimeArtworkProps {
   className?: string;
   priority?: boolean;
   sizes?: string;
+  preferLarge?: boolean;
+  zoomOnHover?: boolean;
 }
 
-export function AnimeArtwork({ anime, variant = "cover", fit = "cover", className = "", priority = false, sizes: requestedSizes }: AnimeArtworkProps) {
-  const imageUrl = variant === "hero" ? anime.heroUrl ?? anime.coverUrl : anime.coverUrl;
+export function AnimeArtwork({ anime, variant = "cover", fit = "cover", className = "", priority = false, sizes: requestedSizes, preferLarge = false, zoomOnHover = true }: AnimeArtworkProps) {
+  const imageUrl = variant === "hero" || preferLarge ? anime.heroUrl ?? anime.coverUrl : anime.coverUrl;
   const sizes = requestedSizes ?? (variant === "hero" ? "240px" : variant === "thumb" ? "128px" : "(max-width: 640px) 50vw, 240px");
   const imageFit = fit === "contain" ? "object-contain object-center" : variant === "hero" ? "object-contain object-right" : "object-cover object-center";
 
   return (
     <div role="img" aria-label={`${anime.title} artwork`} className={`relative isolate overflow-hidden bg-gradient-to-br ${accentStyles[anime.accent]} ${className}`}>
-      {imageUrl && <Image src={imageUrl} alt="" fill preload={priority} quality={85} sizes={sizes} className={`${imageFit} ${fit === "contain" ? "" : "transition-transform duration-200 motion-safe:group-hover:scale-105"}`} />}
+      {imageUrl && <Image src={imageUrl} alt="" fill preload={priority} quality={85} sizes={sizes} className={`${imageFit} ${fit === "contain" || !zoomOnHover ? "" : "transition-transform duration-200 motion-safe:group-hover:scale-105"}`} />}
       {!imageUrl && <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(255,255,255,.35),transparent_3%),linear-gradient(145deg,transparent,rgba(0,0,0,.4))]" />}
     </div>
   );

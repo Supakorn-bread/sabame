@@ -26,7 +26,7 @@ export function libraryItem(node: unknown, status: MalListStatus): MalLibraryIte
   const pictures = item.main_picture && typeof item.main_picture === "object" ? item.main_picture as Record<string, unknown> : {};
   const largePicture = typeof pictures.large === "string" && pictures.large.startsWith("https://cdn.myanimelist.net/") ? pictures.large : undefined;
   const mediumPicture = typeof pictures.medium === "string" && pictures.medium.startsWith("https://cdn.myanimelist.net/") ? pictures.medium : undefined;
-  const cover = mediumPicture ?? largePicture;
+  const cover = largePicture ?? mediumPicture;
   const duration = typeof item.average_episode_duration === "number" && Number.isFinite(item.average_episode_duration) ? Math.max(0, Math.min(1440, Math.round(item.average_episode_duration / 60))) : 0;
   return {
     anime: { id: animeId, title: item.title.slice(0, 300), subtitle: "", synopsis: typeof item.synopsis === "string" ? item.synopsis.slice(0, 10_000) : "", genres: Array.isArray(item.genres) ? item.genres.flatMap(value => value && typeof value.name === "string" ? [value.name] : []).slice(0, 20) : [], totalEpisodes, episodeMinutes: duration, accent: "violet", ...(typeof item.mean === "number" ? { score: String(item.mean) } : {}), ...(cover ? { coverUrl: cover } : {}), ...(largePicture ? { heroUrl: largePicture } : {}) },

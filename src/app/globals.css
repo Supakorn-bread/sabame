@@ -126,6 +126,38 @@ button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
   -webkit-backdrop-filter: blur(24px);
 }
 
+.library-cover-badge {
+  color: #fff;
+  background: rgb(14 12 23 / 82%);
+  border: 1px solid rgb(255 255 255 / 28%);
+  backdrop-filter: blur(12px);
+}
+.library-cover-caption {
+  color: #fff;
+  background: linear-gradient(transparent, rgb(8 7 14 / 92%));
+  text-shadow: 0 1px 3px #000;
+}
+.library-glass-details {
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: inherit;
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity 200ms ease-out, transform 220ms cubic-bezier(.2,.8,.2,1), visibility 220ms;
+}
+.library-glass-details[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .library-glass-details { transition: none !important; transform: none; }
+}
+
 .eyebrow {
   color: var(--primary);
   font-family: var(--font-geist), var(--font-manrope), sans-serif;

@@ -94,11 +94,13 @@ test("library progress persists after a reload", async ({ page }) => {
   await page.goto("/library");
 
   const animeCard = page.locator("article").filter({ hasText: "Cyberpunk: Edgerunners" });
+  await animeCard.getByRole("button", { name: "Show details for Cyberpunk: Edgerunners" }).click();
   await expect(animeCard.getByText("7 / 10")).toBeVisible();
   await animeCard.getByRole("button", { name: "Increase Cyberpunk: Edgerunners watched episodes" }).click();
   await expect(animeCard.getByText("8 / 10")).toBeVisible();
 
   await page.reload();
+  await animeCard.getByRole("button", { name: "Show details for Cyberpunk: Edgerunners" }).click();
   await expect(page.locator("article").filter({ hasText: "Cyberpunk: Edgerunners" }).getByText("8 / 10")).toBeVisible();
 });
 
@@ -146,6 +148,7 @@ test("search, filters, and account actions are usable", async ({ page }) => {
   await page.goto("/library");
   await page.getByRole("searchbox", { name: "Search library" }).fill("Cyberpunk");
   await expect(page.locator("article")).toHaveCount(1);
+  await page.getByRole("button", { name: "Show details for Cyberpunk: Edgerunners" }).click();
   await page.getByRole("button", { name: "Increase Cyberpunk: Edgerunners watched episodes" }).click();
   await expect(page.getByRole("status").filter({ hasText: "progress updated" })).toContainText("8 episodes");
   await page.getByRole("button", { name: "Clear search" }).click();

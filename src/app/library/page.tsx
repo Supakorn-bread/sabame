@@ -63,7 +63,7 @@ export default function LibraryPage() {
       <p role="status" className="mb-5 min-h-5 text-xs text-[var(--primary)]">{feedback}</p>
 
       {results.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 min-[360px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:gap-6 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 min-[500px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5">
           {results.map(({ anime, entry }) => <LibraryAnimeCard key={anime.id} anime={anime} entry={entry} onProgressChange={updateProgress} onStatusChange={updateStatus} />)}
         </div>
       ) : hasLibraryEntries ? (
