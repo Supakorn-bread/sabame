@@ -21,8 +21,9 @@ async function expectNoAccessibilityViolations(page: Page) {
 }
 
 test("public homepage offers an accessible responsive hero and demo entry", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Your next story starts here." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dive into your next story." })).toBeVisible();
   await expect(page).toHaveURL("/");
   await expectNoAccessibilityViolations(page);
   await page.screenshot({ path: "test-results/home-desktop.png", fullPage: true });
@@ -39,6 +40,24 @@ test("public homepage offers an accessible responsive hero and demo entry", asyn
   await expect(page).toHaveURL("/login");
   await page.getByRole("button", { name: "Try demo instantly" }).click();
   await expect(page).toHaveURL("/dashboard");
+});
+
+test("mascot branding fits narrow homepage and application headers", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const homeBrand = page.getByRole("link", { name: "Sabame home", exact: true });
+  const theme = page.getByRole("button", { name: /^Theme:/ });
+  expect((await homeBrand.boundingBox())!.x + (await homeBrand.boundingBox())!.width).toBeLessThanOrEqual((await theme.boundingBox())!.x);
+  await logIn(page);
+  const brand = page.locator("header").getByRole("link", { name: "Sabame", exact: true });
+  await expect(brand.locator("img")).toHaveAttribute("src", /sabame-mark/);
+  const find = page.getByRole("link", { name: "Find anime", exact: true });
+  expect((await brand.boundingBox())!.x + (await brand.boundingBox())!.width).toBeLessThanOrEqual((await find.boundingBox())!.x);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 768, height: 900 });
+  const navigation = page.getByRole("navigation", { name: "Primary", exact: true });
+  expect((await navigation.boundingBox())!.x + (await navigation.boundingBox())!.width).toBeLessThanOrEqual((await find.boundingBox())!.x);
 });
 
 test("header search accepts typing, exposes focus and supports result navigation", async ({ page }) => {

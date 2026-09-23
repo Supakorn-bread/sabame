@@ -1,0 +1,23 @@
+.ocean-water-effects {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 1800ms ease, filter 1800ms ease;
+}
+
+.ocean-water-effects canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dark .ocean-water-effects {
+  opacity: 0.42;
+  filter: saturate(0.55) hue-rotate(18deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ocean-water-effects { transition: none; }
+}
