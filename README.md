@@ -5,4 +5,6 @@ MyAnimeList login, list import, and two-way progress sync: [account setup](docs/
 
 Media search/player setup, API contract, subtitle limitations and verification commands: [media implementation](docs/media-implementation.md).
 
+Anime broadcast timetable integration and server token setup: [schedule setup](docs/schedule-setup.md).
+
 Provider/source evidence: [anime-sdk investigation](docs/anime-sdk-investigation.md).

@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     qualities: [75, 85],
     remotePatterns: [
       { protocol: "https", hostname: "cdn.myanimelist.net", pathname: "/**" },
+      { protocol: "https", hostname: "img.animeschedule.net", pathname: "/production/assets/public/img/**" },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
