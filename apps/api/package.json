@@ -1,0 +1,48 @@
+{
+  "name": "@sabame/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --import tsx --watch src/main.ts",
+    "build": "prisma generate --config prisma7.config.ts && tsc -p tsconfig.build.json",
+    "start": "node --env-file-if-exists=.env dist/main.js",
+    "lint": "eslint src test",
+    "typecheck": "prisma generate --config prisma7.config.ts && tsc --noEmit -p tsconfig.json",
+    "format": "prettier --write src test",
+    "format:check": "prettier --check src test",
+    "pretest": "npm run prisma:generate",
+    "test": "vitest run",
+    "pretest:integration": "npm run prisma:generate",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "prisma:generate": "prisma generate --config prisma7.config.ts",
+    "prisma:migrate:deploy": "prisma migrate deploy --config prisma7.config.ts",
+    "prisma:migrate:dev": "prisma migrate dev --config prisma7.config.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.2.6",
+    "@nestjs/core": "11.2.6",
+    "@nestjs/platform-express": "11.2.6",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "@sabame/catalog": "0.1.0",
+    "@sabame/domain": "0.1.0",
+    "pg": "8.23.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "express": "5.2.1"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "11.2.6",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.17.1",
+    "@types/pg": "^8.23.1",
+    "prisma": "7.10.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.7"
+  }
+}

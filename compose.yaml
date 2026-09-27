@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sabame
+      POSTGRES_PASSWORD: sabame_local
+      POSTGRES_DB: sabame_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - sabame-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sabame -d sabame_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  sabame-postgres:
