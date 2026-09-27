@@ -1,0 +1,41 @@
+{
+  "name": "@sabame/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tracker": {
+      "types": "./dist/tracker.d.ts",
+      "default": "./dist/tracker.js"
+    },
+    "./mal": {
+      "types": "./dist/mal.d.ts",
+      "default": "./dist/mal.js"
+    },
+    "./seasonal": {
+      "types": "./dist/seasonal.d.ts",
+      "default": "./dist/seasonal.js"
+    },
+    "./schedule": {
+      "types": "./dist/schedule.d.ts",
+      "default": "./dist/schedule.js"
+    },
+    "./seed": {
+      "types": "./dist/seed.d.ts",
+      "default": "./dist/seed.js"
+    },
+    "./media": {
+      "types": "./dist/media.d.ts",
+      "default": "./dist/media.js"
+    },
+    "./identity": {
+      "types": "./dist/identity.d.ts",
+      "default": "./dist/identity.js"
+    },
+    "./seed-artwork": "./dist/seed-artwork.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

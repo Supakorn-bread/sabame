@@ -1,7 +1,6 @@
 ﻿// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-vi.mock("server-only", () => ({}));
-import { fetchSchedule } from "./client";
+import { fetchSchedule } from "./schedule.js";
 
 beforeEach(() => vi.stubEnv("ANIMESCHEDULE_API_TOKEN", "secret-app-token"));
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });

@@ -1,4 +1,4 @@
-import type { Anime } from "@/features/tracker/types";
+import type { Anime } from "./tracker.js";
 
 export const seasons = [
   { value: "winter", label: "Winter", months: "Jan – Mar" },

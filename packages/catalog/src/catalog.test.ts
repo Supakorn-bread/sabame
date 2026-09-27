@@ -1,9 +1,8 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-vi.mock("server-only", () => ({}));
-vi.mock("./sdk", () => ({ metadataProvider: { search: vi.fn(), fetchMediaInfo: vi.fn() } }));
-import { metadataProvider } from "./sdk";
-import { catalogAnime, fetchMetadata, getCatalogDetail, searchCatalog } from "./catalog";
+vi.mock("./metadata-sdk.js", () => ({ metadataProvider: { search: vi.fn(), fetchMediaInfo: vi.fn() } }));
+import { metadataProvider } from "./metadata-sdk.js";
+import { catalogAnime, fetchMetadata, getCatalogDetail, searchCatalog } from "./catalog.js";
 
 beforeEach(() => { vi.clearAllMocks(); vi.stubEnv("MAL_CLIENT_ID", ""); });
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });

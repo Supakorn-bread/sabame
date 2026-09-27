@@ -1,11 +1,10 @@
-import "server-only";
 import type { IMediaMetadata, IMetaSearchResult } from "anime-sdk";
-import { ANIME_CATALOG, getAnimeById } from "@/features/tracker/seed";
-import type { Anime } from "@/features/tracker/types";
-import { normalizeTitle } from "../identity";
-import { MediaError } from "../types";
-import { metadataProvider } from "./sdk";
-import seedArtwork from "@/features/tracker/seed-artwork.json";
+import { ANIME_CATALOG, getAnimeById } from "@sabame/domain/seed";
+import type { Anime } from "@sabame/domain/tracker";
+import { normalizeTitle } from "@sabame/domain/identity";
+import { MediaError } from "@sabame/domain/media";
+import { metadataProvider } from "./metadata-sdk.js";
+import seedArtwork from "@sabame/domain/seed-artwork" with { type: "json" };
 
 class TtlCache<T> {
   private values = new Map<string, { value: T; expires: number }>();

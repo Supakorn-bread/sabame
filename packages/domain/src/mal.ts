@@ -1,4 +1,4 @@
-import type { Anime, LibraryEntry, LibraryStatus } from "@/features/tracker/types";
+import type { Anime, LibraryEntry, LibraryStatus } from "./tracker.js";
 
 export interface MalUser { id: number; name: string; picture?: string }
 export interface MalListStatus {
@@ -22,6 +22,8 @@ export interface MalOperation {
   submitted?: boolean;
 }
 export interface MalLibraryResponse {
+  /** Opaque, account-scoped continuation. Apply the snapshot only after all pages arrive. */
+  nextCursor?: string;
   user: MalUser;
   items: MalLibraryItem[];
   operations: MalOperation[];

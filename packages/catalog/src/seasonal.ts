@@ -1,7 +1,6 @@
-import "server-only";
-import { catalogAnime, officialMalMetadata } from "@/features/media/server/catalog";
-import { MediaError } from "@/features/media/types";
-import { seasons, type SeasonSelection, type SeasonalAnime, type SeasonalResult } from "../model";
+import { catalogAnime, officialMalMetadata } from "./catalog.js";
+import { MediaError } from "@sabame/domain/media";
+import { seasons, type SeasonSelection, type SeasonalAnime, type SeasonalResult } from "@sabame/domain/seasonal";
 
 const fields = "id,title,main_picture,alternative_titles,synopsis,mean,num_episodes,average_episode_duration,genres,studios,media_type,start_date,start_season,num_list_users,nsfw";
 const cache = new Map<string, { expires: number; value: SeasonalResult }>();

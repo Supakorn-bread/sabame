@@ -1,5 +1,5 @@
-import type { Anime, LibraryEntry } from "./types";
-import artwork from "./seed-artwork.json";
+import type { Anime, LibraryEntry } from "./tracker.js";
+import artwork from "./seed-artwork.json" with { type: "json" };
 
 export const STITCH_ASSETS = {
   avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBA38VzzAqR1PW-ll9TUrmmnQ8gbIXQS1VthXr3Ub60Re0iEUT23_OoWDEihtIresRgGePPTNsMpkV9MQyf-PT1-qv_tdTEZoQ712USRORYNxQFCp2nTqcYZiq4tjPRHqBvkorTOvpWm7DdpHvcdoVWlj9aEzYtlXhsO6EAV_4tEMwuxglM3MLaOvFyfWqucsgw8QHLb2AqAnNEd_nyk8ro0UuMvbVTXz7fQ9prQ6o4DgytZJCPFRRADA",

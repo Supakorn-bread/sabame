@@ -1,6 +1,5 @@
-import "server-only";
 
-import { isScheduleWeek, normalizeSchedulePayload, type AirType, type ScheduleAnime, type ScheduleWeek } from "../model";
+import { isScheduleWeek, normalizeSchedulePayload, type AirType, type ScheduleAnime, type ScheduleWeek } from "@sabame/domain/schedule";
 
 export class ScheduleServiceError extends Error {
   constructor(public readonly code: "not_configured" | "upstream_unavailable" | "invalid_payload" | "timeout") {

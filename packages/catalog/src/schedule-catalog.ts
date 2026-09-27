@@ -1,7 +1,6 @@
-import "server-only";
 
-import type { SeasonSelection } from "@/features/seasonal/model";
-import { requestAnimeSchedule, ScheduleServiceError } from "./client";
+import type { SeasonSelection } from "@sabame/domain/seasonal";
+import { requestAnimeSchedule, ScheduleServiceError } from "./schedule.js";
 
 interface AnimeScheduleAnime {
   route: string;

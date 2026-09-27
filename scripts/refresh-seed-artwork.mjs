@@ -1,6 +1,6 @@
 // Refresh public catalog artwork, not streaming/episode identity mappings.
 import { readFile, writeFile } from "node:fs/promises";
-const path = new URL("../src/features/tracker/seed-artwork.json", import.meta.url);
+const path = new URL("../packages/domain/src/seed-artwork.json", import.meta.url);
 const snapshot = JSON.parse(await readFile(path, "utf8"));
 for (const [id, entry] of Object.entries(snapshot)) {
   const response = await fetch(`https://api.jikan.moe/v4/anime/${entry.malId}`, { signal: AbortSignal.timeout(12_000) });

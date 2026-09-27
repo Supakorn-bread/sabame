@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-vi.mock("server-only", () => ({}));
-import { fetchSeasonRoutes } from "./anime-catalog";
+import { fetchSeasonRoutes } from "./schedule-catalog.js";
 
 beforeEach(() => vi.stubEnv("ANIMESCHEDULE_API_TOKEN", "secret-app-token"));
 afterEach(() => {

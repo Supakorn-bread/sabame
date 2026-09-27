@@ -1,0 +1,42 @@
+{
+  "name": "@sabame/catalog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./catalog": {
+      "types": "./dist/catalog.d.ts",
+      "default": "./dist/catalog.js"
+    },
+    "./seasonal": {
+      "types": "./dist/seasonal.d.ts",
+      "default": "./dist/seasonal.js"
+    },
+    "./schedule": {
+      "types": "./dist/schedule.d.ts",
+      "default": "./dist/schedule.js"
+    },
+    "./schedule-catalog": {
+      "types": "./dist/schedule-catalog.d.ts",
+      "default": "./dist/schedule-catalog.js"
+    },
+    "./metadata-sdk": {
+      "types": "./dist/metadata-sdk.d.ts",
+      "default": "./dist/metadata-sdk.js"
+    }
+  },
+  "dependencies": {
+    "@sabame/domain": "0.1.0",
+    "anime-sdk": "1.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "3.2.7",
+    "typescript": "5.9.2",
+    "@types/node": "22.17.1"
+  }
+}
