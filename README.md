@@ -1,7 +1,9 @@
 # sabame
 Sabame : saba + anime, for watching and tracking MAL (myanimelist) and hareshi-like all-in-one in this project.
 
-MyAnimeList login, list import, and two-way progress sync: [account setup](docs/mal-account-setup.md). Requires Node 22.13+ and a persistent disk for SQLite. Demo mode works without MAL credentials.
+An npm-workspace monorepo: `apps/web` owns Next.js, `apps/api` owns the NestJS modular monolith and PostgreSQL, and `packages/` holds shared code. See [architecture and contribution scopes](docs/architecture.md).
+
+MyAnimeList login, list import, and two-way progress sync: [account setup](docs/mal-account-setup.md). Uses a NestJS backend and PostgreSQL (Neon in production). Requires Node 22.13+. Demo mode works without MAL credentials while the backend is running. See [backend setup and deployment](docs/backend-migration.md).
 
 Media search/player setup, API contract, subtitle limitations and verification commands: [media implementation](docs/media-implementation.md).
 

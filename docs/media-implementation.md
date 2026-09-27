@@ -20,7 +20,7 @@ Local catalog + official MAL metadata (MalMeta/Jikan without MAL_CLIENT_ID)
   → native video / lazily imported HLS.js + VTT tracks
 ```
 
-Provider extraction stays in `anime-sdk@1.1.0`. `src/features/media/server/sdk.ts` explicitly uses `FetchTransport`, disables SDK retries and external mapping services, and never uses curl/cookie fallback. The SDK is isolated behind `server-only` imports. `providers.ts` wraps the real SDK interface; it does not copy extraction logic.
+Provider extraction stays in `anime-sdk@1.1.0`. `apps/web/src/features/media/server/sdk.ts` explicitly uses `FetchTransport`, disables SDK retries and external mapping services, and never uses curl/cookie fallback. The SDK is isolated behind `server-only` imports. `providers.ts` wraps the real SDK interface; it does not copy extraction logic.
 
 With `MAL_CLIENT_ID` configured, both catalog search and playback details use official MAL v2. Details preserve English, original/native titles, synonyms, release year and episode count, and validate the returned MAL ID. This avoids the Jikan full-details/episode-pagination dependency for imported accounts. Without that configuration, the existing SDK metadata path remains. Metadata failures are retryable and are not cached or reported as an absent video source.
 
@@ -47,7 +47,7 @@ SDK `availableLanguages` means `sub/dub/raw`, not subtitle language. The adapter
 | POST | `/api/anime/[animeId]/media` | `{ "episodeNumber": 1 }` → `MediaResult` or safe error code/request ID |
 | GET | `/api/media/resource?ticket=…` | Validated media, rewritten HLS or converted VTT |
 
-`MediaResult` and subtitle types are defined in `src/features/media/types.ts`. Responses never contain SDK URNs, raw provider objects, cookies or private request headers. Signed resource tickets are integrity-protected, not encrypted; treat them as temporary bearer URLs. Responses use `Cache-Control: no-store`.
+`MediaResult` and subtitle types are defined in `packages/domain/src/media.ts` and re-exported by `apps/web/src/features/media/types.ts`. Responses never contain SDK URNs, raw provider objects, cookies or private request headers. Signed resource tickets are integrity-protected, not encrypted; treat them as temporary bearer URLs. Responses use `Cache-Control: no-store`.
 
 Video types are `hls` and `mp4`; torrent playback is outside this implementation. Sources expire after 30 minutes. Child HLS tickets inherit that deadline. The player offers an explicit fresh-source action after errors; changing episodes does not resolve or autoplay the next source.
 
@@ -80,7 +80,7 @@ Real media duration controls playback bounds. Time updates are saved at most onc
 ## Resource delivery and setup
 
 1. Install dependencies with `npm install`.
-2. Copy `.env.example` to `.env.local` and set `MEDIA_PROXY_SECRET` to a random secret of at least 32 characters (`openssl rand -hex 32`). The implementation session generated a local secret only; it is ignored by Git.
+2. Copy `apps/web/.env.example` to `apps/web/.env.local` and set `MEDIA_PROXY_SECRET` to a random secret of at least 32 characters (`openssl rand -hex 32`). The local environment file is ignored by Git.
 3. Start with `npm run dev`.
 
 The default exact host policy allows `stream.animeparadise.moe` and `api.animeparadise.moe`. Optional `MEDIA_ALLOWED_HOSTS` accepts comma-separated exact, operator-reviewed hosts. Unknown CDN hosts fail closed; do not add wildcards or user-submitted hosts. No secrets belong in `NEXT_PUBLIC_*` variables.

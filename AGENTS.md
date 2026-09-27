@@ -22,16 +22,16 @@ This file expresses a preferred operating configuration; it does not identify or
 
 ## Project Structure & Module Organization
 
-Sabame is a Next.js App Router application. Routes and global styling live under `src/app/`; reusable components are in `src/components/`; tracker state, selectors, seed data, and domain logic are grouped in `src/features/tracker/`. Unit tests sit beside the code they cover as `*.test.ts` or `*.test.tsx`. Browser tests live in `e2e/`, static assets in `public/`, and implementation notes in `docs/`. Do not commit generated `.next/`, coverage, Playwright reports, or local `.worktrees/` content.
+Sabame is an npm-workspace monorepo. The Next.js App Router frontend lives in `apps/web`, including `src/app/`, `src/components/`, `src/features/`, and `public/`. The NestJS modular-monolith backend lives in `apps/api`, with feature modules under `src/modules/` and Prisma migrations under `prisma/`. Shared browser-safe contracts and pure logic live in `packages/domain`; server-only provider integration lives in `packages/catalog`. Frontend unit tests sit beside the code they cover as `*.test.ts` or `*.test.tsx`; backend tests live in `apps/api/test/`. Cross-application browser tests live in `e2e/`, and implementation notes in `docs/`. Do not commit generated `.next/`, `dist/`, Prisma Client, coverage, Playwright reports, or local `.worktrees/` content. See `docs/architecture.md` for dependency boundaries.
 
 ## Build, Test, and Development Commands
 
-- `npm run dev` starts the Next.js development server.
+- `npm run dev` builds shared packages and starts both Next.js and NestJS development servers.
 - `npm run lint` runs ESLint with Next.js Core Web Vitals and TypeScript rules.
 - `npm run typecheck` validates TypeScript without emitting files.
-- `npm test` runs the Vitest unit and component suite once.
+- `npm test` runs architecture boundary checks, shared catalog tests, and the frontend Vitest suite. `npm run test:api` runs backend unit/HTTP tests; `npm run test:integration` uses a dedicated local PostgreSQL test database.
 - `npm run test:e2e` runs Playwright browser and Axe accessibility checks. Install its browser once with `npx playwright install chromium`.
-- `npm run build` creates the production build; `npm run build -- --webpack` is the fallback when Turbopack is unavailable.
+- `npm run build` creates the frontend production build; `npm run build -- --webpack` is the fallback when Turbopack is unavailable. `npm run build:api` builds NestJS and `npm run build:all` builds both.
 
 ## Coding Style & Frontend Rules
 

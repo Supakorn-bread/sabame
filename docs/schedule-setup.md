@@ -15,7 +15,7 @@ The schedule is account-personalized. It reads the server-stored MAL list across
 1. Sign in or create an AnimeSchedule.net account.
 2. In account settings, open the API tab and create an application.
 3. Copy the application token for the documented non-OAuth API.
-4. Set ANIMESCHEDULE_API_TOKEN in .env.local for local development or in the deployment's server environment. Keep it out of source control and never use a NEXT_PUBLIC_ variable.
+4. Set `ANIMESCHEDULE_API_TOKEN` in `apps/api/.env` for local development or in the NestJS deployment's server environment. Keep it out of source control and never use a `NEXT_PUBLIC_` variable.
 5. Restart the development server or redeploy.
 
 The server requests the paginated season catalog at GET /api/v3/anime?years=YYYY&seasons=SEASON&page=N and reads anime[].websites.mal plus anime[].route to build the crosswalk. It then requests GET /api/v3/timetables/{all|raw|sub|dub}?year=YYYY&week=ISO_WEEK&tz=IANA_TIME_ZONE with Authorization: Bearer <application-token>. The selected IANA time zone and language filter determine the weekly timetable.

@@ -1,20 +1,21 @@
 # MyAnimeList Accounts in Sabame
 
-Sabame now includes MAL OAuth login, complete list import, and two-way progress/status sync. The first implementation runs on Node.js 22.13+ with a persistent SQLite database. A real MAL connection requires your registered application credentials; the browser tests use explicit fixtures and do not access a real account.
+Sabame now includes MAL OAuth login, complete list import, and two-way progress/status sync. The backend runs on NestJS / Node.js 22.13+ with PostgreSQL through Prisma. A real MAL connection requires your registered application credentials; the browser tests use explicit fixtures and do not access a real account.
 
 ## Run Locally
 
 1. Register a **Web** application through [MAL API configuration](https://myanimelist.net/apiconfig).
-2. Register the callback URL `http://localhost:3000/api/auth/mal/callback` exactly. Use your HTTPS origin for a hosted Node server.
-3. Add these values to the existing, ignored `.env.local` without removing your media configuration:
+2. Register the callback URL `http://localhost:3000/api/auth/mal/callback` exactly. Use your frontend HTTPS origin in production.
+3. Follow [backend setup](backend-migration.md) to start PostgreSQL and apply migrations, then add these values to the ignored `apps/api/.env`:
 
    ```dotenv
    MAL_CLIENT_ID=your-client-id
    MAL_CLIENT_SECRET=your-client-secret
    MAL_REDIRECT_URI=http://localhost:3000/api/auth/mal/callback
    MAL_TOKEN_ENCRYPTION_KEY=your-64-character-hex-key
-   # Optional; defaults to .data/sabame.sqlite
-   MAL_DATABASE_PATH=
+   APP_ORIGIN=http://localhost:3000
+   DATABASE_URL=postgresql://sabame:sabame_local@127.0.0.1:55432/sabame_dev
+   DIRECT_URL=postgresql://sabame:sabame_local@127.0.0.1:55432/sabame_dev
    ```
 
    Generate the encryption key with `openssl rand -hex 32`. Keep the value private and stable across restarts; replacing it makes existing encrypted connections unreadable and requires users to reconnect.
@@ -37,9 +38,9 @@ Without credentials, the login screen explains that MAL is not configured and **
 
 ## Storage and Deployment
 
-SQLite creates tables automatically on first configured account request. The default `.data/` directory is ignored by Git. Back up the database and encryption key securely. The repository has no hosted database dependency or automatic paid provisioning.
+Apply the checked-in Prisma migrations explicitly before starting the backend. Local development uses PostgreSQL 16; production uses Neon with a pooled application connection and direct migration connection. No database is provisioned or migrated automatically during startup.
 
-Run this version on a Node server with a persistent disk. Ephemeral/serverless filesystems such as Vercel Functions are **not supported** by this storage adapter; MAL configuration fails closed there. A shared transactional database adapter is required before such a deployment. Node's built-in SQLite module can emit an experimental warning on Node 22.
+Deploy Next.js and NestJS as separate Vercel projects, keeping browser API requests on the frontend domain. See [deployment and fresh-database cutover](backend-migration.md). Preserve the encryption key securely across deployments.
 
 Database tables cover accounts, sessions, OAuth transactions, imported entries, durable sync operations, and account-wide leases. Leases serialize token refresh and sync across requests/processes using the same database. Browser operations retain IDs and baselines across retries; credentials never enter that outbox.
 
@@ -54,7 +55,7 @@ Database tables cover accounts, sessions, OAuth transactions, imported entries, 
 
 ## Verification
 
-Run `npm test`, `npm run lint`, `npm run typecheck`, and `npm run test:e2e`. Playwright builds with webpack and covers demo regressions plus MAL login states, imported list rendering, progress acknowledgement, conflicts, retries, and logout. Server tests exercise actual SQLite persistence with mocked upstream MAL responses, OAuth state/replay rejection, encrypted credentials, pagination, refresh, and idempotent updates.
+Run `npm test`, `npm run lint`, `npm run typecheck`, and `npm run test:e2e`. Playwright builds with webpack and covers demo regressions plus MAL login states, imported list rendering, progress acknowledgement, conflicts, retries, and logout. Run `npm run test:api` and `npm run test:integration` for backend verification. Server integration tests exercise actual PostgreSQL persistence with mocked upstream MAL responses, OAuth state/replay rejection, encrypted credentials, pagination, refresh, and idempotent updates.
 
 Browser screenshots are written to `test-results/login-mal.png` and `test-results/library-mal-imported.png`. Imported-list screenshots use test fixtures; they are not proof of a live account connection. No real MAL account is modified by automated tests.
 
