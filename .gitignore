@@ -3,6 +3,7 @@
 .codex/
 node_modules/
 .next/
+next-env.d.ts
 coverage/
 playwright-report/
 test-results/
@@ -11,3 +12,20 @@ test-results/
 .env
 .env.*
 !.env.example
+
+# Workspace build output
+apps/*/dist/
+packages/*/dist/
+apps/api/src/generated/
+
+# Local deployment state and runtime artifacts
+.vercel/
+*.log
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
