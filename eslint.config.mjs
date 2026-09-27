@@ -1,9 +1,11 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTypeScript from "eslint-config-next/typescript";
+import tseslint from "typescript-eslint";
+import webConfig from "./apps/web/eslint.config.mjs";
+import { boundariesConfig } from "./scripts/eslint/workspace-boundaries.mjs";
 
 export default defineConfig([
-  ...nextVitals,
-  ...nextTypeScript,
-  globalIgnores([".next/**", ".worktrees/**", ".agents/skills/**", "coverage/**", "playwright-report/**", "test-results/**"]),
+  globalIgnores(["**/.next/**", ".worktrees/**", ".agents/**", "**/coverage/**", "playwright-report/**", "test-results/**", "apps/*/dist/**", "apps/api/src/generated/**", "packages/*/dist/**"]),
+  { files: ["apps/api/**/*.ts", "packages/**/*.ts", "e2e/**/*.ts", "playwright.config.ts"], extends: [tseslint.configs.recommended], rules: { "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }] } },
+  { basePath: "apps/web", extends: webConfig },
+  { files: ["**/*.{ts,tsx,js,mjs}"], ...boundariesConfig },
 ]);

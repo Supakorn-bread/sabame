@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ANIME_CATALOG } from "./seed";
-import artwork from "./seed-artwork.json";
+import artwork from "@sabame/domain/seed-artwork";
 
 describe("catalog artwork", () => {
   it("uses fetched MAL artwork for every seed and never overrides it with mock hero images", () => {

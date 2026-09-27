@@ -3,45 +3,59 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.13.0" },
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test"
+  "engines": {
+    "node": ">=22.13.0"
   },
-  "dependencies": {
-    "anime-sdk": "1.1.0",
-    "hls.js": "1.7.2",
-    "lucide-react": "0.468.0",
-    "next": "16.3.3",
-    "next-themes": "0.4.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "server-only": "0.0.1",
-    "zustand": "5.0.8"
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w @sabame/web --",
+    "start": "npm run start -w @sabame/web --",
+    "lint": "eslint .",
+    "typecheck": "npm run typecheck:web && npm run typecheck -w @sabame/api && tsc --noEmit -p tsconfig.json",
+    "test": "npm run test:architecture && npm run test -w @sabame/catalog && npm run test -w @sabame/web --",
+    "test:watch": "npm run test:watch -w @sabame/web",
+    "test:e2e": "playwright test",
+    "build:shared": "npm run build -w @sabame/domain && npm run build -w @sabame/catalog",
+    "prebuild": "npm run build:shared",
+    "pretest": "npm run build:shared",
+    "pretypecheck": "npm run build:shared",
+    "dev:web": "npm run dev -w @sabame/web --",
+    "predev": "npm run build:shared && npm run prisma:generate -w @sabame/api",
+    "build:api": "npm run build:shared && npm run build -w @sabame/api",
+    "build:all": "npm run build:api && npm run build",
+    "typecheck:web": "npm run typecheck -w @sabame/web",
+    "test:api": "npm run build:shared && npm run test -w @sabame/api",
+    "test:integration": "npm run build:shared && npm run test:integration -w @sabame/api",
+    "db:generate": "npm run prisma:generate -w @sabame/api",
+    "db:migrate": "npm run prisma:migrate:deploy -w @sabame/api",
+    "db:migrate:dev": "npm run prisma:migrate:dev -w @sabame/api",
+    "db:up": "docker compose up -d --wait",
+    "db:stop": "docker compose stop",
+    "lint:web": "npm run lint -w @sabame/web",
+    "lint:api": "npm run lint -w @sabame/api",
+    "test:architecture": "node --test scripts/eslint/*.test.mjs",
+    "format:api": "npm run format -w @sabame/api",
+    "format:check:api": "npm run format:check -w @sabame/api",
+    "test:catalog": "npm run build:shared && npm run test -w @sabame/catalog",
+    "dev:api": "npm run dev -w @sabame/api",
+    "predev:api": "npm run build:shared && npm run db:generate",
+    "predev:web": "npm run build:shared"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.62.1",
-    "@tailwindcss/postcss": "4.1.12",
-    "@testing-library/jest-dom": "6.8.0",
-    "@testing-library/react": "16.3.0",
-    "@testing-library/user-event": "14.6.1",
     "@types/node": "22.17.1",
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.5",
-    "@vitejs/plugin-react": "4.3.4",
     "eslint": "9.33.0",
-    "eslint-config-next": "16.3.3",
-    "jsdom": "26.1.0",
-    "tailwindcss": "4.1.12",
+    "prettier": "3.9.9",
     "typescript": "5.9.2",
-    "vite-tsconfig-paths": "5.1.4",
-    "vitest": "3.2.7"
+    "typescript-eslint": "^8.68.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "overrides": {
+    "deepmerge-ts": "8.0.2",
+    "mysql2": "3.24.4"
   }
 }

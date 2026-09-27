@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { backendRewrites } from "./src/config/backend-routing";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.resolve(import.meta.dirname, "../.."),
+  turbopack: { root: path.resolve(import.meta.dirname, "../..") },
+  // Imports have a 110s client deadline; Next's default proxy timeout is 30s.
+  experimental: { proxyTimeout: 120_000 },
+  async rewrites() {
+    return { beforeFiles: backendRewrites(process.env.BACKEND_URL, Boolean(process.env.VERCEL)) };
+  },
   logging: {
     incomingRequests: { ignore: [/\/api\/media\/resource(?:\?|$)/, /\/api\/auth\/mal\/callback(?:\?|$)/] },
     browserToTerminal: false,

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import type { SeasonalAnime } from "../src/features/seasonal/model";
+import type { SeasonalAnime } from "@sabame/domain/seasonal";
 
 const titles: SeasonalAnime[] = [
   { id: "mal-52991", title: "Frieren: Beyond Journey's End", subtitle: "Sousou no Frieren", synopsis: "The journey continues long after the adventure ends. An elven mage sets out to understand the people she once traveled with, finding new friendships along the way.", genres: ["Adventure", "Drama", "Fantasy"], totalEpisodes: 28, episodeMinutes: 24, accent: "violet", coverUrl: "https://cdn.myanimelist.net/images/anime/1015/138006l.jpg", score: "9.30", format: "tv", studios: ["Madhouse"], startDate: "2023-09-29", members: 2000000, continuing: false },

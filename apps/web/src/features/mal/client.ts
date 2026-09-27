@@ -104,15 +104,46 @@ export function createMalClient(options: {
   const loggingOut = new Set<number>();
   let requestEpoch = 0;
 
+  const readLibraryPage = async (path: string) => {
+    const signal = requestSignal();
+    for (let attempt = 0; ; attempt += 1) {
+      const response = await fetcher(path, { cache: "no-store", signal });
+      if (response.ok) return response;
+      const error = await apiError(response);
+      if (error.code !== "sync_busy" || attempt >= 3) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 150 * 2 ** attempt));
+    }
+  };
+
   const getLibrary = async (path: "/api/mal/list" | "/api/mal/import", userId?: number) => {
-    const response = await fetcher(path, path.endsWith("/import") ? {
+    const response = path.endsWith("/import") ? await fetcher(path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ expectedUserId: userId }),
       signal: requestSignal(IMPORT_TIMEOUT_MS),
-    } : { cache: "no-store", signal: requestSignal() });
+    }) : await readLibraryPage(path);
     if (!response.ok) throw await apiError(response);
-    return responseJson<MalLibraryResponse>(response);
+    const library = await responseJson<MalLibraryResponse>(response);
+    const seen = new Set<string>();
+    let cursor = library.nextCursor;
+    // Keep the existing visible list until the entire snapshot has arrived.
+    while (cursor) {
+      if (typeof cursor !== "string" || cursor.length > 1024 || seen.has(cursor) || seen.size >= 10_000) {
+        throw new MalClientError("The MAL service returned invalid pagination.", "invalid_response", 502);
+      }
+      seen.add(cursor);
+      const next = await readLibraryPage(`/api/mal/list?cursor=${encodeURIComponent(cursor)}`);
+      if (!next.ok) throw await apiError(next);
+      const page = await responseJson<MalLibraryResponse>(next);
+      if (page.user.id !== library.user.id || page.imported !== library.imported || page.lastSyncedAt !== library.lastSyncedAt) {
+        throw new MalClientError("Your library changed while loading. Retry sync.", "library_changed", 409);
+      }
+      library.items.push(...page.items);
+      library.operations.push(...page.operations);
+      cursor = page.nextCursor;
+    }
+    delete library.nextCursor;
+    return library;
   };
 
   const send = async (operation: MalOperation, resolution?: "local" | "remote", discardOperationIds: string[] = []) => {

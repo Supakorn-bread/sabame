@@ -80,6 +80,44 @@ function mutationBody(init?: RequestInit) {
   return JSON.parse(String(init?.body)) as MalMutationRequest;
 }
 
+describe("paginated MAL libraries", () => {
+  it("retries a busy read page without repeating the import", async () => {
+    const { store } = activeStore();
+    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ ...library([item("mal-100")]), nextCursor: "next-page" }))
+      .mockResolvedValueOnce(Response.json({ error: { code: "sync_busy" } }, { status: 409 }))
+      .mockResolvedValueOnce(Response.json(library([item("mal-200")])));
+    await createMalClient({ store, fetch: fetcher }).sync();
+    expect(fetcher.mock.calls.map(([path]) => path)).toEqual(["/api/mal/import", "/api/mal/list?cursor=next-page", "/api/mal/list?cursor=next-page"]);
+    expect(Object.keys(store.getState().library).sort()).toEqual(["mal-100", "mal-200"]);
+  });
+
+  it("bounds busy-page retries and preserves the visible library", async () => {
+    const { store } = activeStore(["mal-999"]);
+    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ ...library([]), nextCursor: "next-page" }))
+      .mockImplementation(async () => Response.json({ error: { code: "sync_busy" } }, { status: 409 }));
+    await createMalClient({ store, fetch: fetcher }).sync();
+    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(Object.keys(store.getState().library)).toEqual(["mal-999"]);
+  });
+
+  it("assembles every page before applying the imported snapshot", async () => {
+    const { store } = activeStore(["mal-999"]);
+    const fetcher: MalFetcher = vi.fn().mockResolvedValueOnce(Response.json({ ...library([item("mal-100")]), nextCursor: "next-page" }))
+      .mockResolvedValueOnce(Response.json(library([item("mal-200")])));
+    await createMalClient({ store, fetch: fetcher }).sync();
+    expect(fetcher).toHaveBeenCalledWith("/api/mal/list?cursor=next-page", expect.objectContaining({ cache: "no-store" }));
+    expect(Object.keys(store.getState().library).sort()).toEqual(["mal-100", "mal-200"]);
+  });
+  it("preserves the previous visible snapshot if a later page fails", async () => {
+    const { store } = activeStore(["mal-999"]);
+    const fetcher: MalFetcher = vi.fn().mockResolvedValueOnce(Response.json({ ...library([item("mal-100")]), nextCursor: "next-page" }))
+      .mockResolvedValueOnce(Response.json({ error: { code: "library_changed", message: "Retry sync" } }, { status: 409 }));
+    await createMalClient({ store, fetch: fetcher }).sync();
+    expect(Object.keys(store.getState().library)).toEqual(["mal-999"]);
+    expect(store.getState().malSync.status).toBe("error");
+  });
+});
+
 function mutationSuccess(animeId: string, request: MalMutationRequest) {
   const watchedEpisodes = request.changes.watchedEpisodes ?? 0;
   return Response.json({

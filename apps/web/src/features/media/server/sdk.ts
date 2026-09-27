@@ -1,9 +1,9 @@
 import "server-only";
-import { AnimeParadiseProvider, FetchTransport, HttpClient, MalMeta, MappingClient } from "anime-sdk";
+import { AnimeParadiseProvider, FetchTransport, HttpClient, MappingClient } from "anime-sdk";
 
 const transport = new FetchTransport();
 export const http = new HttpClient({ transport, timeoutMs: 10_000, retry: false });
-export const metadataProvider = new MalMeta(http, { defaultSearchType: "ANIME" });
+export { metadataProvider } from "@sabame/catalog/metadata-sdk";
 export const animeParadise = new AnimeParadiseProvider(http);
 export const mappingClient = new MappingClient(http, {
   disableMalsync: true, disableAnify: true, disableArmServer: true,

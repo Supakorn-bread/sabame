@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
-import type { MalLibraryItem, MalListStatus, MalOperation, MalUser } from "../src/features/mal/types";
+import type { MalLibraryItem, MalListStatus, MalOperation, MalUser } from "@sabame/domain/mal";
 
 const user: MalUser = { id: 42, name: "saba_viewer", picture: "https://cdn.myanimelist.net/images/anime/1015/138006l.jpg" };
 const updatedAt = "2026-09-15T10:00:00.000Z";
