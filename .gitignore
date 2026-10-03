@@ -29,3 +29,13 @@ apps/api/src/generated/
 *.db-shm
 *.db-wal
 *.db-journal
+
+# Local AI instructions and skills (including nested apps)
+CLAUDE.md
+AGENTS.md
+.agents/
+.claude/
+
+# Local AI planning and extracted design references
+/docs/superpowers/
+/docs/design/
