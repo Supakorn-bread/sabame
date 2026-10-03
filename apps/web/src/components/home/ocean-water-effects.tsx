@@ -2,134 +2,201 @@
 
 import { useEffect, useRef } from "react";
 
+import { getSwellGlintStarts, sampleOceanSwell } from "./ocean-water-math";
 import "./ocean-water-effects.css";
 
 const FRAME_INTERVAL = 1000 / 30;
 
 const swellBands = [
-  { offset: -2, depth: 10, color: ["rgba(222,255,248,0.20)", "rgba(101,233,226,0.10)", "rgba(44,188,204,0)"] },
-  { offset: 1, depth: 14, color: ["rgba(162,249,241,0.16)", "rgba(56,207,218,0.09)", "rgba(20,163,194,0)"] },
-  { offset: 5, depth: 19, color: ["rgba(104,229,225,0.12)", "rgba(30,183,207,0.07)", "rgba(12,127,170,0)"] },
-  { offset: 10, depth: 24, color: ["rgba(75,202,214,0.09)", "rgba(21,151,190,0.05)", "rgba(6,105,151,0)"] },
+  {
+    offset: -1,
+    depth: 38,
+    layer: 0,
+    color: ["rgba(240,255,255,0.32)", "rgba(112,226,239,0.19)", "rgba(39,155,201,0)"],
+  },
+  {
+    offset: 4,
+    depth: 52,
+    layer: 1,
+    color: ["rgba(194,250,255,0.21)", "rgba(62,201,226,0.16)", "rgba(20,130,187,0)"],
+  },
+  {
+    offset: 11,
+    depth: 69,
+    layer: 2,
+    color: ["rgba(134,228,240,0.17)", "rgba(37,171,211,0.11)", "rgba(13,112,174,0)"],
+  },
+  {
+    offset: 18,
+    depth: 84,
+    layer: 3,
+    color: ["rgba(95,209,230,0.12)", "rgba(23,146,195,0.08)", "rgba(11,102,164,0)"],
+  },
 ] as const;
 
-function swell(x: number, width: number, time: number, layer: number) {
-  const progress = x / Math.max(width, 1);
-  const wavelength = 1.22 + layer * 0.18;
-  const longSwell = Math.sin(progress * Math.PI * 2 * wavelength - time * (0.32 + layer * 0.07) + layer * 0.88);
-  const crossSwell = Math.sin(progress * Math.PI * 2 * (3.1 + layer * 0.43) + time * (0.21 + layer * 0.035) + layer * 1.27);
-  const shortSwell = Math.sin(progress * Math.PI * 2 * (7.2 - layer * 0.32) - time * 0.58 + layer * 0.63);
-  const sharpCrest = Math.pow(Math.max(0, longSwell), 3) * 1.7;
-  const shallowTrough = Math.pow(Math.max(0, -longSwell), 2) * 0.55;
-
-  return longSwell * (3.5 + layer * 0.35)
-    + crossSwell * (1.5 + layer * 0.15)
-    + shortSwell * 0.48
-    + sharpCrest * 0.72
-    - shallowTrough * 0.7;
+function getAnimatedSurfaceY(x: number, width: number, waterline: number, time: number) {
+  return waterline
+    + sampleOceanSwell(x, width, time, 0) * 1.45
+    + sampleOceanSwell(x, width, time, 1) * 1.25
+    + sampleOceanSwell(x, width, time, 2) * 0.6;
 }
 
-function drawWater(context: CanvasRenderingContext2D, width: number, height: number, waterline: number, time: number) {
-  context.clearRect(0, 0, width, height);
-  const depth = height - waterline;
+function drawOceanBody(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  waterline: number,
+  time: number,
+) {
+  const surfaceY = (x: number) => getAnimatedSurfaceY(x, width, waterline, time);
+  const gradient = context.createLinearGradient(0, waterline - 44, 0, height);
+  gradient.addColorStop(0, "#79d3e7");
+  gradient.addColorStop(0.1, "#4daecd");
+  gradient.addColorStop(0.42, "#287da7");
+  gradient.addColorStop(1, "#0b3d68");
+
+  context.save();
+  context.fillStyle = gradient;
+  context.beginPath();
+  context.moveTo(-10, surfaceY(-10));
+  for (let x = -10; x <= width + 12; x += 7) context.lineTo(x, surfaceY(x));
+  context.lineTo(width + 12, height + 1);
+  context.lineTo(-10, height + 1);
+  context.closePath();
+  context.fill();
+
+  context.beginPath();
+  for (let x = -10; x <= width + 12; x += 7) {
+    if (x === -10) context.moveTo(x, surfaceY(x));
+    else context.lineTo(x, surfaceY(x));
+  }
+  context.strokeStyle = "rgba(245,255,255,0.56)";
+  context.lineWidth = 1.3;
+  context.stroke();
+  context.restore();
+}
+
+function drawUnderwaterLight(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  waterline: number,
+  time: number,
+) {
+  const depth = Math.max(0, height - waterline);
+  if (!depth) return;
+
   context.save();
   context.beginPath();
-  context.rect(0, waterline + 8, width, depth);
+  context.rect(0, waterline - 8, width, depth + 8);
   context.clip();
-
-  // Soft, widening light shafts swing from the moving surface into the water.
   context.globalCompositeOperation = "screen";
-  for (let index = 0; index < 7; index++) {
-    const phase = index * 1.73;
-    const origin = width * (0.04 + index * 0.15) + Math.sin(time * 0.32 + phase) * width * 0.016;
-    const spread = width * (0.055 + Math.sin(phase) * 0.016);
-    const slant = Math.sin(time * 0.24 + phase) * width * 0.05 - width * 0.055;
-    const length = depth * (0.8 + Math.sin(phase) * 0.14);
-    const gradient = context.createLinearGradient(origin, waterline, origin + slant, waterline + length);
-    const strength = 0.09 + (Math.sin(time * 0.63 + phase) + 1) * 0.035;
-    gradient.addColorStop(0, `rgba(207,255,245,${strength / 4})`);
-    gradient.addColorStop(0.35, `rgba(178,242,244,${strength * 0.65 / 4})`);
+
+  const rayCount = 5;
+  for (let index = 0; index < rayCount; index++) {
+    const phase = index * 1.57;
+    const surfaceX = width * (0.08 + index * 0.205) + Math.sin(time * 0.18 + phase) * width * 0.012;
+    const surfaceY = waterline + sampleOceanSwell(surfaceX, width, time, 0) * 1.35 + 3;
+    const slant = Math.sin(time * 0.16 + phase) * width * 0.045;
+    const length = depth * (0.42 + Math.sin(phase + 1) * 0.08);
+    const topHalfWidth = 3 + Math.sin(phase) * 1.2;
+    const baseHalfWidth = width * (0.026 + Math.sin(phase) * 0.004);
+    const gradient = context.createLinearGradient(surfaceX, surfaceY, surfaceX + slant, surfaceY + length);
+    gradient.addColorStop(0, "rgba(220,255,249,0.095)");
+    gradient.addColorStop(0.28, "rgba(173,239,239,0.042)");
     gradient.addColorStop(1, "rgba(150,235,245,0)");
     context.fillStyle = gradient;
-    // Nested translucent bands feather the edges without a full-canvas blur pass.
-    for (let band = 0; band < 4; band++) {
-      const feather = 1 - band * 0.22;
-      context.beginPath();
-      context.moveTo(origin - 6 * feather, waterline);
-      context.lineTo(origin + 9 * feather, waterline);
-      context.lineTo(origin + slant + spread * feather, waterline + length);
-      context.quadraticCurveTo(origin + slant, waterline + length * 1.06, origin + slant - spread * feather, waterline + length);
-      context.closePath();
-      context.fill();
-    }
+    context.beginPath();
+    context.moveTo(surfaceX - topHalfWidth, surfaceY);
+    context.bezierCurveTo(
+      surfaceX - topHalfWidth + slant * 0.18,
+      surfaceY + length * 0.3,
+      surfaceX + slant - baseHalfWidth * 0.7,
+      surfaceY + length * 0.72,
+      surfaceX + slant - baseHalfWidth,
+      surfaceY + length,
+    );
+    context.lineTo(surfaceX + slant + baseHalfWidth, surfaceY + length);
+    context.bezierCurveTo(
+      surfaceX + slant + baseHalfWidth * 0.7,
+      surfaceY + length * 0.72,
+      surfaceX + topHalfWidth + slant * 0.18,
+      surfaceY + length * 0.3,
+      surfaceX + topHalfWidth,
+      surfaceY,
+    );
+    context.closePath();
+    context.fill();
   }
 
-  // Shared moving vertices form connected curved caustics, rather than bubbles.
-  const columns = Math.max(6, Math.ceil(width / 150));
-  const rows = 6;
-  const cellWidth = width / columns;
-  const vertex = (column: number, row: number) => {
-    const phase = column * 2.37 + row * 1.91;
-    return {
-      x: column * cellWidth + Math.sin(phase + time * 0.43) * cellWidth * 0.22,
-      y: waterline + depth * (0.12 + row / rows * 0.86) + Math.sin(phase * 1.32 + time * 0.57) * depth * 0.035,
-    };
-  };
-  for (let row = 0; row <= rows; row++) {
-    for (let column = -1; column <= columns; column++) {
-      const point = vertex(column, row);
-      const right = vertex(column + 1, row);
-      const below = vertex(column, row + 1);
-      const pulse = (Math.sin(time * 0.85 + column * 1.7 + row * 2.1) + 1) / 2;
-      context.strokeStyle = `rgba(182,255,244,${(0.025 + pulse * 0.065) * (1 - row / (rows + 2))})`;
-      context.lineWidth = 1 + pulse * 1.5;
-      context.beginPath();
-      context.moveTo(point.x, point.y);
-      context.quadraticCurveTo((point.x + right.x) / 2, (point.y + right.y) / 2 + Math.sin(column + time * 0.4) * 16, right.x, right.y);
-      context.moveTo(point.x, point.y);
-      context.quadraticCurveTo((point.x + below.x) / 2 + Math.cos(row + time * 0.3) * 20, (point.y + below.y) / 2, below.x, below.y);
-      context.stroke();
-    }
+  for (let index = 0; index < 7; index++) {
+    const phase = index * 1.41;
+    const startX = width * (0.035 + (index % 4) * 0.225) + Math.sin(time * 0.21 + phase) * width * 0.018;
+    const startY = waterline + depth * (0.15 + index * 0.105) + Math.sin(time * 0.24 + phase) * 5;
+    const span = width * (0.07 + (index % 3) * 0.018);
+    const arc = Math.sin(time * 0.34 + phase) * 5;
+    const gradient = context.createLinearGradient(startX, startY, startX + span, startY);
+    gradient.addColorStop(0, "rgba(204,255,247,0)");
+    gradient.addColorStop(0.45, "rgba(204,255,247,0.045)");
+    gradient.addColorStop(1, "rgba(204,255,247,0)");
+    context.strokeStyle = gradient;
+    context.lineWidth = 0.8;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(startX, startY);
+    context.quadraticCurveTo(startX + span * 0.46, startY + arc, startX + span, startY - arc * 0.45);
+    context.stroke();
   }
+
   context.restore();
+}
 
-  // Four depth-graded translucent swells add an irregular, illustrated waterline.
+function drawSurface(
+  context: CanvasRenderingContext2D,
+  width: number,
+  waterline: number,
+  time: number,
+) {
   context.save();
-  for (let layer = 0; layer < swellBands.length; layer++) {
-    const band = swellBands[layer];
-    const phase = layer * 1.83;
-    const waveY = (x: number) => waterline + band.offset + swell(x, width, time, layer);
-    const fill = context.createLinearGradient(0, waterline + band.offset, 0, waterline + band.offset + band.depth);
+  for (const band of swellBands) {
+    const waveY = (x: number) => waterline + band.offset + sampleOceanSwell(x, width, time, band.layer) * 1.35;
+    const fill = context.createLinearGradient(
+      0,
+      waterline + band.offset,
+      0,
+      waterline + band.offset + band.depth,
+    );
     fill.addColorStop(0, band.color[0]);
-    fill.addColorStop(0.48, band.color[1]);
+    fill.addColorStop(0.46, band.color[1]);
     fill.addColorStop(1, band.color[2]);
     context.fillStyle = fill;
     context.beginPath();
     context.moveTo(-10, waveY(-10));
-    for (let x = -10; x <= width + 12; x += 6) context.lineTo(x, waveY(x));
-    for (let x = width + 12; x >= -10; x -= 6) {
-      const lowerEdge = band.depth * (0.92 + Math.sin(x * 0.006 + time * 0.19 + phase) * 0.08)
-        + Math.sin(x * 0.009 + time * 0.24 + phase) * 2.5
-        + Math.sin(x * 0.021 - time * 0.17 + layer * 1.3) * 1.2;
+    for (let x = -10; x <= width + 12; x += 7) context.lineTo(x, waveY(x));
+    for (let x = width + 12; x >= -10; x -= 7) {
+      const lowerEdge = band.depth * (0.9 + Math.sin(x * 0.004 + time * 0.13 + band.layer) * 0.055)
+        + Math.sin(x * 0.007 + time * 0.16 + band.layer * 1.2) * 2.4;
       context.lineTo(x, waveY(x) + lowerEdge);
     }
     context.closePath();
     context.fill();
 
-    if (layer > 1) continue;
-    context.lineCap = "butt";
-    const spacing = layer === 0 ? 104 : 151;
-    for (let crest = -1; crest <= Math.ceil(width / spacing); crest++) {
-      const start = crest * spacing + Math.sin(crest * 1.7 + phase) * 13 + Math.sin(time * 0.27 + phase) * 12;
-      const length = 13 + (Math.sin(crest * 2.9 + time * 0.62 + phase) + 1) * 9;
-      const alpha = 0.18 + (Math.sin(crest + time * 0.72 + phase) + 1) * 0.12;
+    if (band.layer > 1) continue;
+
+    const spacing = band.layer === 0 ? 228 : 174;
+    const glintStarts = getSwellGlintStarts(width, time, spacing, band.layer);
+    for (const start of glintStarts) {
+      const surfaceVariation = Math.sin(start * 0.012 + band.layer);
+      const length = 16 + (surfaceVariation + 1) * 7;
+      const alpha = 0.2 + (Math.sin(start * 0.007 + band.layer * 0.4) + 1) * 0.045;
       const foam = context.createLinearGradient(start, waveY(start), start + length, waveY(start + length));
-      foam.addColorStop(0, "rgba(236,255,249,0)");
-      foam.addColorStop(0.2, `rgba(236,255,249,${alpha * 0.58})`);
-      foam.addColorStop(0.72, `rgba(236,255,249,${alpha * 0.7})`);
-      foam.addColorStop(1, "rgba(236,255,249,0)");
+      foam.addColorStop(0, "rgba(242,255,252,0)");
+      foam.addColorStop(0.2, `rgba(242,255,252,${alpha * 0.55})`);
+      foam.addColorStop(0.72, `rgba(242,255,252,${alpha * 0.78})`);
+      foam.addColorStop(1, "rgba(242,255,252,0)");
       context.strokeStyle = foam;
-      context.lineWidth = layer === 0 ? 1.8 : 1.1;
+      context.lineWidth = band.layer === 0 ? 1.5 : 1.05;
+      context.lineCap = "round";
       context.beginPath();
       for (let step = 0; step <= length; step += 3) {
         const x = start + step;
@@ -142,14 +209,44 @@ function drawWater(context: CanvasRenderingContext2D, width: number, height: num
   context.restore();
 }
 
-export function OceanWaterEffects({ paused }: { paused: boolean }) {
+function drawWater(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  waterline: number,
+  time: number,
+) {
+  context.clearRect(0, 0, width, height);
+  drawOceanBody(context, width, height, waterline, time);
+  drawUnderwaterLight(context, width, height, waterline, time);
+  drawSurface(context, width, waterline, time);
+}
+
+export function OceanWaterEffects({
+  paused,
+  onCanvasReady,
+}: {
+  paused: boolean;
+  onCanvasReady?: (ready: boolean) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const waterlineRef = useRef<HTMLSpanElement>(null);
   const phaseRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
+    if (!canvas) {
+      onCanvasReady?.(false);
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      onCanvasReady?.(false);
+      return;
+    }
+    onCanvasReady?.(true);
+
     let frame = 0;
     let lastFrame = 0;
     let width = 0;
@@ -164,13 +261,14 @@ export function OceanWaterEffects({ paused }: { paused: boolean }) {
       const bounds = canvas.getBoundingClientRect();
       width = bounds.width;
       height = bounds.height;
-      // Bound the backing buffer on large/high-DPI screens as well as phones.
       const ratio = Math.min(window.devicePixelRatio || 1, 1.5, 1920 / Math.max(width, 1));
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      const percentage = Number.parseFloat(getComputedStyle(canvas).getPropertyValue("--ocean-waterline")) || 50;
-      waterline = height * percentage / 100;
+      const marker = waterlineRef.current;
+      waterline = marker
+        ? Math.min(height, Math.max(0, marker.getBoundingClientRect().top - bounds.top))
+        : height * 0.66;
       draw();
     };
     const animate = (now: number) => {
@@ -208,7 +306,7 @@ export function OceanWaterEffects({ paused }: { paused: boolean }) {
       if (motionPreference?.removeEventListener) motionPreference.removeEventListener("change", handleMotionPreference);
       else motionPreference?.removeListener(handleMotionPreference);
     };
-  }, [paused]);
+  }, [paused, onCanvasReady]);
 
   return (
     <div
@@ -217,6 +315,11 @@ export function OceanWaterEffects({ paused }: { paused: boolean }) {
       data-paused={paused ? "true" : "false"}
       aria-hidden="true"
     >
+      <span
+        ref={waterlineRef}
+        className="ocean-water-effects__waterline-marker"
+        data-testid="ocean-waterline-marker"
+      />
       <canvas ref={canvasRef} data-testid="ocean-water-canvas" />
     </div>
   );

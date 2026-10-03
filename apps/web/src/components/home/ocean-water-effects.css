@@ -1,10 +1,19 @@
 .ocean-water-effects {
   position: absolute;
+  z-index: 0;
   inset: 0;
-  z-index: 3;
   pointer-events: none;
   opacity: 1;
   transition: opacity 1800ms ease, filter 1800ms ease;
+}
+
+.ocean-water-effects__waterline-marker {
+  position: absolute;
+  top: var(--ocean-waterline);
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
 .ocean-water-effects canvas {
@@ -14,10 +23,12 @@
 }
 
 .dark .ocean-water-effects {
-  opacity: 0.42;
-  filter: saturate(0.55) hue-rotate(18deg);
+  opacity: 0.94;
+  filter: brightness(0.78) saturate(0.84) hue-rotate(20deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ocean-water-effects { transition: none; }
+  .ocean-water-effects {
+    transition: none;
+  }
 }

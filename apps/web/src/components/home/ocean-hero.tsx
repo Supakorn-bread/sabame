@@ -1,27 +1,24 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 
 import { AnimeArtwork } from "@/components/ui/anime-artwork";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
-import { OceanWaterEffects } from "./ocean-water-effects";
 import { OceanFish } from "./ocean-fish";
+import { OceanWaterEffects } from "./ocean-water-effects";
 
 import "./ocean-hero.css";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const posterSlots = [
-  { slot: "surface-a", tilt: "-7deg", delay: "0ms" },
-  { slot: "surface-b", tilt: "6deg", delay: "140ms" },
-  { slot: "deep-a", tilt: "-5deg", delay: "260ms" },
-  { slot: "deep-b", tilt: "4deg", delay: "380ms" },
-  { slot: "deep-c", tilt: "-8deg", delay: "500ms" },
+  { slot: "surface-a", tilt: "-7deg" },
+  { slot: "surface-b", tilt: "5deg" },
+  { slot: "deep-c", tilt: "-4deg" },
 ] as const;
 
-const bubbles = [0, 1, 2, 3, 4, 5, 6, 7];
+const heroPosters = ANIME_CATALOG.slice(0, posterSlots.length);
 
 function subscribeReducedMotion(onChange: () => void) {
   if (typeof window.matchMedia !== "function") return () => {};
@@ -51,9 +48,8 @@ function getDocumentVisibilitySnapshot() {
 
 export function OceanHero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const randomizedOnce = useRef(false);
   const [inView, setInView] = useState(true);
-  const [posterAnimes, setPosterAnimes] = useState(() => ANIME_CATALOG.slice(0, posterSlots.length));
+  const [canvasReady, setCanvasReady] = useState(false);
   const prefersReducedMotion = useSyncExternalStore(
     subscribeReducedMotion,
     getReducedMotionSnapshot,
@@ -65,18 +61,6 @@ export function OceanHero() {
     () => true,
   );
   const motionPaused = prefersReducedMotion || !documentVisible || !inView;
-
-  useEffect(() => {
-    if (randomizedOnce.current) return;
-    randomizedOnce.current = true;
-
-    const shuffled = [...ANIME_CATALOG];
-    for (let index = shuffled.length - 1; index > 0; index -= 1) {
-      const otherIndex = Math.floor(Math.random() * (index + 1));
-      [shuffled[index], shuffled[otherIndex]] = [shuffled[otherIndex]!, shuffled[index]!];
-    }
-    setPosterAnimes(shuffled.slice(0, posterSlots.length));
-  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -97,20 +81,31 @@ export function OceanHero() {
       aria-labelledby="home-title"
       className="ocean-hero"
       data-motion={motionPaused ? "paused" : "active"}
+      data-water-renderer={canvasReady ? "canvas" : "fallback"}
     >
-      <div className="ocean-hero__backdrop" data-testid="ocean-background" aria-hidden="true">
-        <Image
-          src="/images/ocean-clouds.webp"
-          alt=""
-          fill
-          preload
-          sizes="(max-width: 767px) 1600px, 100vw"
-          className="ocean-hero__backdrop-image"
-        />
+      <div className="ocean-hero__sky" data-testid="ocean-background" aria-hidden="true">
+        <span className="ocean-hero__cloud ocean-hero__cloud--far" />
+        <span className="ocean-hero__cloud ocean-hero__cloud--near" />
+        <span className="ocean-hero__sun" />
       </div>
-      <div className="ocean-hero__surface-art" aria-hidden="true" />
-      <div className="ocean-hero__sky-shade" aria-hidden="true" />
-      <div className="ocean-hero__water" aria-hidden="true" />
+      <div className="ocean-hero__water" aria-hidden="true">
+        <svg
+          className="ocean-hero__waterline-art"
+          data-testid="ocean-static-waterline"
+          viewBox="0 0 1440 110"
+          preserveAspectRatio="none"
+        >
+          <path
+            className="ocean-hero__waterline-fill"
+            d="M0 44 C112 25 206 61 316 43 S505 27 615 47 S824 61 936 42 S1135 24 1247 44 S1375 58 1440 40 L1440 110 L0 110 Z"
+          />
+          <path
+            className="ocean-hero__waterline-stroke"
+            d="M0 44 C112 25 206 61 316 43 S505 27 615 47 S824 61 936 42 S1135 24 1247 44 S1375 58 1440 40"
+          />
+        </svg>
+      </div>
+      <div className="ocean-hero__night-tint" aria-hidden="true" />
       <div className="ocean-hero__night-sky" aria-hidden="true">
         <span className="ocean-hero__moon" />
         <span className="ocean-hero__star ocean-hero__star--one" />
@@ -127,9 +122,9 @@ export function OceanHero() {
         data-paused={motionPaused ? "true" : "false"}
         aria-hidden="true"
       >
-        <OceanWaterEffects paused={motionPaused} />
+        <OceanWaterEffects paused={motionPaused} onCanvasReady={setCanvasReady} />
         <OceanFish />
-        {posterAnimes.map((anime, index) => {
+        {heroPosters.map((anime, index) => {
           const poster = posterSlots[index];
           if (!poster) return null;
 
@@ -140,7 +135,6 @@ export function OceanHero() {
               data-testid="ocean-card"
               style={{
                 "--ocean-card-tilt": poster.tilt,
-                "--ocean-card-delay": poster.delay,
               } as CSSProperties}
             >
               <AnimeArtwork
@@ -148,7 +142,7 @@ export function OceanHero() {
                 className="ocean-hero__poster-art"
                 preferLarge
                 zoomOnHover={false}
-                sizes="(max-width: 767px) 24vw, 12vw"
+                sizes="(max-width: 767px) 28vw, 12vw"
               />
               <span className="ocean-hero__poster-water" />
               <span className="ocean-hero__poster-night-water" />
@@ -156,27 +150,31 @@ export function OceanHero() {
             </div>
           );
         })}
-        <div className="ocean-hero__bubbles">
-          {bubbles.map((bubble) => (
-            <span className="ocean-hero__bubble" key={bubble} />
-          ))}
-        </div>
       </div>
 
-      <div className="ocean-hero__content">
-        <p className="ocean-hero__eyebrow">Your next watch starts here</p>
-        <h1 id="home-title">Dive into your next story.</h1>
-        <p className="ocean-hero__description">Find your next favorite anime.</p>
-        <div className="ocean-hero__actions">
-          <Link className="ocean-hero__cta ocean-hero__cta--primary" href="#features">
-            Take a look
-          </Link>
-          <Link className="ocean-hero__cta ocean-hero__cta--secondary" href="/login">
-            Explore Sabame
-          </Link>
+      <div className="ocean-hero__layout">
+        <div className="ocean-hero__content">
+          <p className="ocean-hero__eyebrow">
+            <span className="ocean-hero__eyebrow-dot" aria-hidden="true" />
+            Your next watch starts here
+          </p>
+          <h1 id="home-title">
+            Dive into your <span className="ocean-hero__headline-accent">next story.</span>
+          </h1>
+          <p className="ocean-hero__description">
+            Discover anime you’ll love. Keep your watchlist, episode progress, and next story together.
+          </p>
+          <div className="ocean-hero__actions">
+            <Link className="ocean-hero__cta ocean-hero__cta--primary" href="/login">
+              Explore Sabame
+            </Link>
+            <Link className="ocean-hero__cta ocean-hero__cta--secondary" href="#features">
+              Take a look
+            </Link>
+          </div>
         </div>
+        <div className="ocean-hero__story-space" aria-hidden="true" />
       </div>
-
     </section>
   );
 }

@@ -1,22 +1,14 @@
 # Ocean homepage hero
 
-The homepage uses an open-ocean anime illustration with clouds, without the previous coastline or buildings. The background is `public/images/ocean-clouds.webp` (1586 × 992), encoded to WebP from a new image made with the built-in image generation tool. The previous `ocean-day.webp` is retained as an unused earlier asset.
+Design reference: <https://flood.pop.in.th/>.
 
-Light and dark themes use the same image. CSS gradually dims and tints the scene over 1800ms, adding a moon, stars and reflected moonlight. Desktop hero height follows the image aspect ratio. The waterline is positioned at 50% on desktop and mobile, inside the illustration’s surface band. HTML posters and text remain separate from the background.
+The homepage hero is a layered open-ocean scene drawn with CSS and Canvas rather than a baked background image. CSS shapes provide the pale sky, soft clouds and sun; the dark theme layers in a night tint, moon and stars. Three deterministic anime posters and two fish remain separate from the copy, CTA links and navigation. The retained `public/images/ocean-clouds.webp` and `ocean-day.webp` assets are not currently rendered by the hero.
 
-The transparent Canvas 2D layer supplies four overlapping swells with shaded depth, broken foam, light shafts and underwater caustics. CSS gently moves a masked copy of the painted surface band, while the sky and deep-water background remain fixed. Both layers fade with the theme. Surface-poster water tints use hero-relative lengths so their cuts follow the waterline on wide screens. Rendering runs outside React state, at no more than 30 frames per second with bounded pixel density. Motion stops for reduced-motion preferences, hidden tabs and offscreen content; there is no Pause/Resume button, and the scene does not intercept scrolling.
+Desktop uses a 66% waterline and a bounded 760–900px hero. On mobile the waterline is anchored 260px from the hero's bottom, with at least 340px of scene space after the content row. This keeps the complete copy and actions above the water at narrow widths and larger text sizes. A zero-size marker positioned from `--ocean-waterline` gives Canvas the same measured CSS pixel as the static water layer and SVG fallback, including when the custom property uses `calc()`.
 
-The surface animation uses a softly feathered mask and a small 16-second looping drift to keep painted foam aligned with the background. The water tint fades in below the surface rather than beginning at a hard horizontal edge; procedural swell fills and foam highlights soften toward their boundaries.
-
-## Final background prompt
-
-Mode: built-in image generation; new illustration, encoded into the workspace asset above.
-
-> Use case: stylized-concept. Production background illustration for an anime website hero, no interface. Wide 16:10 composition. A beautiful hand-painted 2D anime OPEN OCEAN beneath a blue sky with soft towering white cumulus clouds, absolutely no land, coastline, buildings, lighthouse, boats or people. Side-on above/below-water cutaway: upper 38 percent is spacious pale blue sky and cloud banks, with clean light negative space on the upper left for later HTML headline; the water surface is horizontal at precisely 38 percent of image height. Lower 62 percent is clear luminous turquoise underwater gently deepening to blue, quiet open water with subtle painterly depth and soft diffuse light only. Calm rolling open-sea water surface in elegant anime illustration style. Keep the waterline gentle and low contrast: animated wave crests, light shafts, caustics and cards will be drawn separately in code, so avoid strong baked-in foam or rays or fish or coral. The sky and clouds are the main scenic subject. Rich but restrained cel-painted color and atmospheric cloud shading, crisp high quality illustration, not photorealistic, not 3D. No text, letters, logos, UI, posters, borders, split panels or watermark. Single continuous daytime scene; night uses same image color treatment in code.
+Canvas draws a continuous ocean body from slightly above the moving surface to the bottom, then adds restrained shaded swells, broken crest glints, light ribbons and underwater caustics. Work is capped at 30 frames per second with bounded pixel density (DPR capped at 1.5 and backing width at 1920px). Motion pauses for reduced-motion preferences, hidden tabs and offscreen content. A CSS gradient and static SVG crest remain available if Canvas 2D is unavailable; the scene does not intercept page scrolling.
 
 ## Verification
-
-All navigation headers share the same scroll behavior: after scrolling past the original 80px bar, the same navigation becomes fixed with a short entrance animation. It stays fixed while scrolling back up until the top is reached. Header backgrounds are opaque in both themes, except the homepage header before it becomes sticky. The login page also uses the public navigation with an opaque background. Reduced motion disables the entrance animation; the feature anchor leaves room for the bar. Application pages retain their reserved header space and page-content fade.
 
 - `npm test`
 - `npm run lint`
@@ -24,5 +16,14 @@ All navigation headers share the same scroll behavior: after scrolling past the 
 - `npm run test:e2e -- e2e/ocean-hero.spec.ts e2e/sabame.spec.ts`
 - `npm run test:e2e -- e2e/home-header.spec.ts`
 - `npm run test:e2e -- e2e/top-navigation.spec.ts`
+- `npm run test:e2e -- e2e/ocean-depth.spec.ts`
 
-The browser runner builds production with Webpack. Tests cover the new image, reversible day/night transitions without image swapping, moving pixels in the surface and underwater lighting regions, reduced motion, mobile and wide-screen layout, normal scrolling and accessibility in both themes.
+The hero browser suite checks day/night transitions, CTA routes, desktop card and copy separation, moving Canvas pixels, lower-ocean coverage, reduced-motion and offscreen pauses, normal mobile scrolling, 320px/200%-text geometry and the static CSS/SVG fallback.
+
+## Shared navigation behavior
+
+All navigation headers share the same scroll behavior: after scrolling past the original 80px bar, the same navigation becomes fixed with a short entrance animation. It stays fixed while scrolling back up until the top is reached. Header backgrounds are opaque in both themes, except the homepage header before it becomes sticky. The login page also uses the public navigation with an opaque background. Reduced motion disables the entrance animation; the feature anchor leaves room for the bar. Application pages retain their reserved header space and page-content fade.
+
+## Deep-ocean continuation
+
+The server-rendered feature section descends from the hero's water color into a shared ocean-floor footer. A homepage-scoped CSS module supplies static soft light, translucent non-interactive feature panels, and matching light/dark color tokens; the hero receives only a masked bottom fade, with no Canvas changes or added motion. The section anchor, existing copy, footer demo route, and page-level footer landmark remain intact. The focused e2e/ocean-depth.spec.ts suite covers theme continuity, contrast, anchor/footer navigation, reduced motion, and mobile/zoom geometry.

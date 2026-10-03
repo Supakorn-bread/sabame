@@ -10,26 +10,27 @@ vi.mock("./ocean-water-effects", () => ({
 }));
 
 describe("OceanHero", () => {
-  it("renders its accessible copy, navigation links, and decorative poster scene", () => {
+  it("renders accessible copy, destinations, and an image-independent illustrated fallback", () => {
     render(<OceanHero />);
 
     expect(screen.getByRole("region", { name: "Dive into your next story." })).toHaveAttribute(
       "id",
       "home-hero",
     );
-    expect(screen.getByText("Find your next favorite anime.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Take a look" })).toHaveAttribute("href", "#features");
+    expect(screen.getByText("Your next watch starts here")).toBeInTheDocument();
+    expect(screen.getByText("Discover anime you’ll love. Keep your watchlist, episode progress, and next story together.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Explore Sabame" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "Take a look" })).toHaveAttribute("href", "#features");
 
     const background = screen.getByTestId("ocean-background");
-    expect(background.querySelector("img")).toHaveAttribute(
-      "sizes",
-      "(max-width: 767px) 1600px, 100vw",
-    );
+    expect(background.querySelector("img")).toBeNull();
+    expect(background.querySelectorAll(".ocean-hero__cloud")).toHaveLength(2);
+    expect(background.querySelector(".ocean-hero__sun")).not.toBeNull();
+    expect(screen.getByTestId("ocean-static-waterline").querySelectorAll("path")).toHaveLength(2);
 
     const scene = screen.getByTestId("ocean-scene");
     expect(scene).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getAllByTestId("ocean-card")).toHaveLength(5);
+    expect(screen.getAllByTestId("ocean-card")).toHaveLength(3);
     expect(screen.getByTestId("ocean-waves")).toBeInTheDocument();
     expect(screen.getAllByTestId("ocean-fish")).toHaveLength(2);
     for (const fish of screen.getAllByTestId("ocean-fish")) {
