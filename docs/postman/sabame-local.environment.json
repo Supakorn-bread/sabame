@@ -1,0 +1,90 @@
+{
+  "name": "Sabame local",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "backendUrl",
+      "value": "http://localhost:4000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "appOrigin",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "query",
+      "value": "Cowboy",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "seasonYear",
+      "value": "2026",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "season",
+      "value": "fall",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "page",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "week",
+      "value": "40",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "timeZone",
+      "value": "Asia/Bangkok",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "airType",
+      "value": "all",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "animeId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "operationId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "ticket",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
