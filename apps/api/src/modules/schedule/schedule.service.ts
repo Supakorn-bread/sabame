@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { fetchSeasonRoutes } from "@sabame/catalog/schedule-catalog";
+import { fetchScheduleRoutes } from "@sabame/catalog/schedule-catalog";
 import {
   fetchSchedule,
   isTimeZone,
@@ -66,7 +66,8 @@ export class ScheduleService {
       }
 
       const malIds = new Set(
-        (await this.repository.entries(user.id)).flatMap(({ anime }) => {
+        (await this.repository.entries(user.id)).flatMap(({ anime, entry }) => {
+          if (entry.status !== "watching") return [];
           const malId = malIdFromAnimeId(anime.id);
           return malId === null ? [] : [malId];
         }),
@@ -81,9 +82,9 @@ export class ScheduleService {
         });
       }
 
-      let seasonRoutes: ReadonlyMap<number, readonly string[]>;
+      let scheduleRoutes: ReadonlyMap<number, readonly string[]>;
       try {
-        seasonRoutes = await fetchSeasonRoutes(season);
+        scheduleRoutes = await fetchScheduleRoutes(season);
       } catch (error) {
         return scheduleFailure(error, "catalog");
       }
@@ -91,7 +92,7 @@ export class ScheduleService {
       const matchedRoutes = new Set<string>();
       let matchedAnimeCount = 0;
       for (const malId of malIds) {
-        const routes = seasonRoutes.get(malId);
+        const routes = scheduleRoutes.get(malId);
         if (!routes?.length) continue;
         matchedAnimeCount += 1;
         for (const route of routes)
@@ -108,7 +109,7 @@ export class ScheduleService {
 
       let schedule;
       try {
-        schedule = await fetchSchedule({ year, week }, timeZone, airType);
+        schedule = await fetchSchedule({ year, week }, timeZone, "raw");
       } catch (error) {
         return scheduleFailure(error, "timetable");
       }
@@ -117,8 +118,10 @@ export class ScheduleService {
         state: "ready",
         season,
         matchedAnimeCount,
-        items: schedule.filter((item) =>
-          matchedRoutes.has(item.route.toLocaleLowerCase("en")),
+        items: schedule.filter(
+          (item) =>
+            item.airType.toLocaleLowerCase("en") === "raw" &&
+            matchedRoutes.has(item.route.toLocaleLowerCase("en")),
         ),
       });
     } catch (error) {

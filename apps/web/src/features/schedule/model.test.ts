@@ -62,6 +62,24 @@ describe("schedule payload normalization", () => {
 
     expect(items.map((item) => item.imageVersionRoute)).toEqual(["poster-v3-42", null]);
   });
+
+  it("preserves full in-bound route and image identifiers and rejects values over their limits", () => {
+    const longRoute = "r" + "x".repeat(217);
+    const longImageRoute = `covers/${"p".repeat(269)}.jpg`;
+    const tooLongRoute = "r" + "x".repeat(512);
+    const tooLongImageRoute = "p".repeat(1021) + ".jpg";
+    const items = normalizeSchedulePayload([
+      { title: "Long identifiers", route: longRoute, imageVersionRoute: longImageRoute },
+      { title: "Long route rejected", route: tooLongRoute, imageVersionRoute: "poster.jpg" },
+      { title: "Long image rejected", route: "image-limit", imageVersionRoute: tooLongImageRoute },
+    ]);
+
+    expect(longRoute).toHaveLength(218);
+    expect(longImageRoute).toHaveLength(280);
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({ route: longRoute, imageVersionRoute: longImageRoute });
+    expect(items[1]).toMatchObject({ route: "image-limit", imageVersionRoute: null });
+  });
 });
 
 describe("timezone-aware week helpers", () => {

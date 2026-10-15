@@ -22,7 +22,9 @@ export interface ScheduleAnime {
 }
 
 const MAX_ITEMS = 500;
-const routePattern = /^[a-z\d][a-z\d_-]{0,127}$/i;
+const MAX_ROUTE_LENGTH = 512;
+const MAX_IMAGE_VERSION_ROUTE_LENGTH = 1024;
+const routePattern = /^[a-z\d][a-z\d_-]{0,511}$/i;
 const imageRoutePattern = new RegExp("^[a-z0-9][a-z0-9._-]*(?:/[a-z0-9][a-z0-9._-]*){0,8}$", "i");
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -35,6 +37,12 @@ function text(value: unknown, maxLength: number): string | null {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim().slice(0, maxLength)
     : null;
+}
+
+function identifier(value: unknown, maxLength: number): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized.length > 0 && normalized.length <= maxLength ? normalized : null;
 }
 
 function dateTime(value: unknown): string | null {
@@ -57,7 +65,7 @@ export function normalizeSchedulePayload(payload: unknown): ScheduleAnime[] {
     if (!source) continue;
 
     const title = text(source.title, 240);
-    const route = text(source.route, 128);
+    const route = identifier(source.route, MAX_ROUTE_LENGTH);
     if (!title || !route || !routePattern.test(route)) continue;
 
     const airType = text(source.airType, 32) ?? "all";
@@ -73,7 +81,7 @@ export function normalizeSchedulePayload(payload: unknown): ScheduleAnime[] {
       episodeNumber ?? "",
     ].join(":");
 
-    const imageVersionRoute = text(source.imageVersionRoute, 128);
+    const imageVersionRoute = identifier(source.imageVersionRoute, MAX_IMAGE_VERSION_ROUTE_LENGTH);
     items.push({
       id,
       title,
