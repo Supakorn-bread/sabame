@@ -26,6 +26,10 @@ function memoryStorage(initialValue?: string): StateStorage & { value: string | 
   };
 }
 
+function nextTurn() {
+  return new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
+
 const malUser = (id: number): MalUser => ({ id, name: `viewer-${id}` });
 const remote = (watched = 0): MalListStatus => ({
   status: "watching", num_episodes_watched: watched, score: 8, is_rewatching: true,
@@ -110,6 +114,98 @@ describe("tracker store", () => {
     expect(Object.keys(store.getState().library).length).toBeGreaterThan(0);
     expect(store.getState().storageWarning).toBe(true);
     expect(store.getState().hasHydrated).toBe(true);
+  });
+
+  it("keeps memory edits and retries persistence after synchronous storage recovery", () => {
+    let value: string | null = null;
+    let failWrites = false;
+    let writeAttempts = 0;
+    const storage: StateStorage = {
+      getItem: () => value,
+      setItem: (_name, nextValue) => {
+        writeAttempts += 1;
+        if (failWrites) throw new Error("storage unavailable");
+        value = nextValue;
+      },
+      removeItem: () => { value = null; },
+    };
+    const store = createTrackerStore({ storage });
+    writeAttempts = 0;
+    failWrites = true;
+
+    let actionError: unknown;
+    try {
+      store.getState().setPlaybackPosition("skyward-bloom", 420);
+    } catch (error) {
+      actionError = error;
+    }
+
+    expect(writeAttempts).toBe(1);
+    expect(actionError).toBeUndefined();
+    expect(store.getState().library["skyward-bloom"].playbackSeconds).toBe(420);
+    expect(store.getState().storageWarning).toBe(true);
+
+    failWrites = false;
+    store.getState().setPlaybackPosition("skyward-bloom", 600);
+
+    expect(writeAttempts).toBe(2);
+    expect(JSON.parse(value!).state.demoLibrary["skyward-bloom"].playbackSeconds).toBe(600);
+  });
+
+  it("surfaces rejected asynchronous writes and persists after recovery", async () => {
+    let value: string | null = null;
+    let failWrites = false;
+    let writeAttempts = 0;
+    const storage: StateStorage = {
+      getItem: () => value,
+      setItem: async (_name, nextValue) => {
+        writeAttempts += 1;
+        if (failWrites) throw new Error("storage unavailable");
+        value = nextValue;
+      },
+      removeItem: () => { value = null; },
+    };
+    const store = createTrackerStore({ storage });
+    await nextTurn();
+    writeAttempts = 0;
+    failWrites = true;
+
+    store.getState().setPlaybackPosition("skyward-bloom", 420);
+    await nextTurn();
+
+    expect(writeAttempts).toBe(1);
+    expect(store.getState().library["skyward-bloom"].playbackSeconds).toBe(420);
+    expect(store.getState().storageWarning).toBe(true);
+
+    failWrites = false;
+    store.getState().setPlaybackPosition("skyward-bloom", 600);
+    await nextTurn();
+
+    expect(writeAttempts).toBe(2);
+    expect(JSON.parse(value!).state.demoLibrary["skyward-bloom"].playbackSeconds).toBe(600);
+  });
+
+  it("surfaces rejected asynchronous removals without retrying a write", async () => {
+    let writeAttempts = 0;
+    let removeAttempts = 0;
+    const storage: StateStorage = {
+      getItem: () => null,
+      setItem: () => { writeAttempts += 1; },
+      removeItem: async () => {
+        removeAttempts += 1;
+        throw new Error("storage unavailable");
+      },
+    };
+    const store = createTrackerStore({ storage });
+    await nextTurn();
+    writeAttempts = 0;
+
+    (store.persist as typeof store.persist & { clearStorage: () => void }).clearStorage();
+    await nextTurn();
+
+    expect(removeAttempts).toBe(1);
+    expect(writeAttempts).toBe(0);
+    expect(store.getState().storageWarning).toBe(true);
   });
 
   it("resets the complete demo state", () => {

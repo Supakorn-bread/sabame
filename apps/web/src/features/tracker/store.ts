@@ -106,12 +106,31 @@ const browserStorage: StateStorage = {
 };
 
 function createSafeJsonStorage(storage: StateStorage, onStorageError: () => void): PersistStorage<PersistedTrackerState> {
+  let reportingError = false;
+  const reportError = () => {
+    if (reportingError) return;
+    reportingError = true;
+    try {
+      onStorageError();
+    } finally {
+      reportingError = false;
+    }
+  };
+  const runStorageOperation = (operation: () => unknown) => {
+    if (reportingError) return;
+    try {
+      const result = operation();
+      return result instanceof Promise ? result.catch(reportError) : result;
+    } catch {
+      reportError();
+    }
+  };
   const parse = (value: string | null): StorageValue<PersistedTrackerState> | null => {
     if (value === null) return null;
     try {
       return JSON.parse(value) as StorageValue<PersistedTrackerState>;
     } catch {
-      onStorageError();
+      reportError();
       return null;
     }
   };
@@ -119,25 +138,17 @@ function createSafeJsonStorage(storage: StateStorage, onStorageError: () => void
     getItem(name) {
       try {
         const value = storage.getItem(name);
-        return value instanceof Promise ? value.then(parse).catch(() => (onStorageError(), null)) : parse(value);
+        return value instanceof Promise ? value.then(parse).catch(() => (reportError(), null)) : parse(value);
       } catch {
-        onStorageError();
+        reportError();
         return null;
       }
     },
     setItem(name, value) {
-      try {
-        return storage.setItem(name, JSON.stringify(value));
-      } catch {
-        onStorageError();
-      }
+      return runStorageOperation(() => storage.setItem(name, JSON.stringify(value)));
     },
     removeItem(name) {
-      try {
-        return storage.removeItem(name);
-      } catch {
-        onStorageError();
-      }
+      return runStorageOperation(() => storage.removeItem(name));
     },
   };
 }
