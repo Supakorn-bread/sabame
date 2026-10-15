@@ -35,6 +35,8 @@ CLAUDE.md
 AGENTS.md
 .agents/
 .claude/
+.windsurf/
+skills-lock.json
 
 # Local AI planning and extracted design references
 /docs/superpowers/
