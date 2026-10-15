@@ -3,19 +3,9 @@
 import type { StoreApi } from "zustand/vanilla";
 
 import { setMalOperationListener, trackerStore, type TrackerStore } from "@/features/tracker/store";
-import type {
-  MalLibraryResponse,
-  MalMutationRequest,
-  MalMutationResponse,
-  MalOperation,
-  MalSessionResponse,
-} from "./types";
+import { parseMalLibraryResponse, parseMalMutationResponse, parseMalSessionResponse } from "./responses";
+import type { MalMutationRequest, MalOperation } from "./types";
 
-interface ErrorResponse {
-  error?: { code?: string; message?: string };
-}
-
-type MutationResponse = MalMutationResponse & { removed?: boolean };
 export type MalFetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 const REQUEST_TIMEOUT_MS = 45_000;
@@ -36,36 +26,32 @@ export class MalClientError extends Error {
   }
 }
 
-async function responseJson<T>(response: Response): Promise<T> {
+async function responseJson<T>(response: Response, parse: (value: unknown) => T): Promise<T> {
   try {
-    return await response.json() as T;
-  } catch {
+    return parse(await response.json());
+  } catch (error) {
+    if (error instanceof MalClientError) throw error;
     throw new MalClientError("The MAL service returned an unreadable response.", "invalid_response", response.status);
   }
 }
 
-function errorFromBody(response: Response, body: ErrorResponse = {}) {
+function errorFromBody(response: Response, body: unknown = {}) {
+  const error = body && typeof body === "object" && "error" in body
+    && body.error && typeof body.error === "object" ? body.error : undefined;
   return new MalClientError(
-    body.error?.message ?? "MyAnimeList could not complete this request.",
-    body.error?.code ?? "mal_request_failed",
+    error && "message" in error && typeof error.message === "string"
+      ? error.message : "MyAnimeList could not complete this request.",
+    error && "code" in error && typeof error.code === "string" ? error.code : "mal_request_failed",
     response.status,
   );
 }
 
 async function apiError(response: Response) {
   try {
-    return errorFromBody(response, await response.json() as ErrorResponse);
+    return errorFromBody(response, await response.json());
   } catch {
     return errorFromBody(response);
   }
-}
-
-function isMutationResponse(value: unknown): value is MutationResponse {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const operation = (value as { operation?: unknown }).operation;
-  return Boolean(operation && typeof operation === "object" && !Array.isArray(operation)
-    && typeof (operation as { id?: unknown }).id === "string"
-    && typeof (operation as { animeId?: unknown }).animeId === "string");
 }
 
 function syncError(store: StoreApi<TrackerStore>, error: unknown) {
@@ -123,18 +109,18 @@ export function createMalClient(options: {
       signal: requestSignal(IMPORT_TIMEOUT_MS),
     }) : await readLibraryPage(path);
     if (!response.ok) throw await apiError(response);
-    const library = await responseJson<MalLibraryResponse>(response);
+    const library = await responseJson(response, parseMalLibraryResponse);
     const seen = new Set<string>();
     let cursor = library.nextCursor;
     // Keep the existing visible list until the entire snapshot has arrived.
     while (cursor) {
-      if (typeof cursor !== "string" || cursor.length > 1024 || seen.has(cursor) || seen.size >= 10_000) {
+      if (seen.has(cursor) || seen.size >= 10_000) {
         throw new MalClientError("The MAL service returned invalid pagination.", "invalid_response", 502);
       }
       seen.add(cursor);
       const next = await readLibraryPage(`/api/mal/list?cursor=${encodeURIComponent(cursor)}`);
       if (!next.ok) throw await apiError(next);
-      const page = await responseJson<MalLibraryResponse>(next);
+      const page = await responseJson(next, parseMalLibraryResponse);
       if (page.user.id !== library.user.id || page.imported !== library.imported || page.lastSyncedAt !== library.lastSyncedAt) {
         throw new MalClientError("Your library changed while loading. Retry sync.", "library_changed", 409);
       }
@@ -170,13 +156,12 @@ export function createMalClient(options: {
         body: JSON.stringify(request),
         signal: requestSignal(),
       });
-      const body = await responseJson<MutationResponse | ErrorResponse>(response);
-      if (!response.ok && !(response.status === 409 && isMutationResponse(body))) {
-        throw errorFromBody(response, body as ErrorResponse);
-      }
-      if (!isMutationResponse(body)) {
-        throw new MalClientError("The MAL service returned an unreadable response.", "invalid_response", response.status);
-      }
+      const body = await responseJson(response, (value) => {
+        if (!response.ok && !(response.status === 409 && value && typeof value === "object" && "operation" in value)) {
+          throw errorFromBody(response, value);
+        }
+        return parseMalMutationResponse(value, submitted);
+      });
       const current = store.getState();
       if (epoch !== requestEpoch || current.malSessionVersion !== sessionVersion || current.malUser?.id !== userId) return;
       current.applyMalOperation(
@@ -247,7 +232,7 @@ export function createMalClient(options: {
     try {
       const response = await fetcher("/api/auth/session", { cache: "no-store", signal: requestSignal() });
       if (!response.ok) throw await apiError(response);
-      const session = await responseJson<MalSessionResponse>(response);
+      const session = await responseJson(response, parseMalSessionResponse);
       if (!store.getState().activateMalAccount(version, session.configured, session.user)) return;
       if (!session.user) return;
       const revision = store.getState().malRevision;
