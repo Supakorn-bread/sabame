@@ -19,6 +19,22 @@ export function getTrackedLibrary(state: TrackingState): Record<string, LibraryE
   return Object.fromEntries(Object.entries(state.library).filter(([id]) => getTrackingStatus(state, id) !== "untracked"));
 }
 
+export function getAccountLibraryStats(state: TrackingState): { completedCount: number; meanScore: number | null } {
+  let completedCount = 0;
+  let scoreTotal = 0;
+  let ratedCount = 0;
+
+  for (const entry of Object.values(getTrackedLibrary(state))) {
+    if (entry.status === "completed") completedCount += 1;
+    if (entry.personalScore && entry.personalScore > 0) {
+      scoreTotal += entry.personalScore;
+      ratedCount += 1;
+    }
+  }
+
+  return { completedCount, meanScore: ratedCount ? scoreTotal / ratedCount : null };
+}
+
 export interface TrackedAnime {
   anime: Anime;
   entry: LibraryEntry;

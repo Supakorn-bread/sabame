@@ -47,8 +47,13 @@ async function mockMalSession(page: Page, options: { signedIn?: boolean; configu
 
 async function mockMalLibrary(page: Page, operations: MalOperation[] = []) {
   const response = { user, items: importedItems, operations, imported: true, lastSyncedAt: updatedAt };
+  let importCalls = 0;
   await page.route("**/api/mal/list", (route) => route.fulfill({ json: response }));
-  await page.route("**/api/mal/import", (route) => route.fulfill({ json: response }));
+  await page.route("**/api/mal/import", (route) => {
+    importCalls += 1;
+    return route.fulfill({ json: response });
+  });
+  return { importCalls: () => importCalls };
 }
 
 async function expectNoAccessibilityViolations(page: Page) {
@@ -148,9 +153,55 @@ test("an imported MAL title keeps its identity and selected episode through play
   await expect(page).toHaveURL(`/watch/${anime.id}`);
 });
 
+test("account stats update in the open dropdown after MyAnimeList sync", async ({ page }) => {
+  await mockCatalog(page);
+  await mockMalSession(page, { signedIn: true });
+  const initialLibrary = { user, items: importedItems, operations: [], imported: true, lastSyncedAt: updatedAt };
+  const refreshedItems = importedItems.map((current) => current.anime.id === "mal-52991"
+    ? item("mal-52991", "Frieren: Beyond Journey's End", "https://cdn.myanimelist.net/images/anime/1015/138006l.jpg", "completed", 28, 6, 28)
+    : current);
+  let markSyncStarted = () => {};
+  let releaseSyncResponse = () => {};
+  const syncStarted = new Promise<void>((resolve) => { markSyncStarted = resolve; });
+  const holdSyncResponse = new Promise<void>((resolve) => { releaseSyncResponse = resolve; });
+
+  await page.route("**/api/mal/list", (route) => route.fulfill({ json: initialLibrary }));
+  await page.route("**/api/mal/import", async (route) => {
+    markSyncStarted();
+    await holdSyncResponse;
+    return route.fulfill({ json: { ...initialLibrary, items: refreshedItems, lastSyncedAt: "2026-09-20T10:00:00.000Z" } });
+  });
+  await page.route("**/_next/image?*", (route) => {
+    const source = new URL(route.request().url()).searchParams.get("url");
+    return source === user.picture ? route.fulfill({ path: "apps/web/public/sabame-mark.webp" }) : route.continue();
+  });
+
+  await page.goto("/dashboard");
+  const account = page.getByRole("button", { name: "Account" });
+  await account.click();
+  const actions = page.getByRole("group", { name: "Account actions" });
+  const stats = actions.getByRole("group", { name: "Account library statistics" });
+  const syncButton = actions.getByRole("button", { name: /^Sync/ });
+  await expect(stats.getByText("1", { exact: true })).toBeVisible();
+  await expect(stats.getByText("7.00", { exact: true })).toBeVisible();
+  await expect(syncButton).toHaveText("Sync now");
+
+  await syncButton.click();
+  await syncStarted;
+  await expect(syncButton).toBeDisabled();
+  await expect(syncButton).toHaveText("Syncing…");
+  releaseSyncResponse();
+
+  await expect(stats.getByText("2", { exact: true })).toBeVisible();
+  await expect(stats.getByText("6.25", { exact: true })).toBeVisible();
+  await expect(account).toHaveAttribute("aria-expanded", "true");
+  await expect(syncButton).toHaveText("Sync now");
+  await expect(syncButton).toBeEnabled();
+});
+
 test("MAL progress confirms, conflicts resolve, failures retry, and logout returns to demo data", async ({ page }) => {
   await mockCatalog(page);
-  await mockMalLibrary(page);
+  const malLibrary = await mockMalLibrary(page);
   const accountSession = await mockMalSession(page, { signedIn: true });
   let mode: "success" | "conflict" | "fail-once" = "success";
   let failed = false;
@@ -182,6 +233,10 @@ test("MAL progress confirms, conflicts resolve, failures retry, and logout retur
     accountSession.signOut();
     return route.fulfill({ json: { success: true } });
   });
+  await page.route("**/_next/image?*", (route) => {
+    const source = new URL(route.request().url()).searchParams.get("url");
+    return source === user.picture ? route.fulfill({ path: "apps/web/public/sabame-mark.webp" }) : route.continue();
+  });
 
   await page.goto("/library");
   const card = page.locator("article").filter({ hasText: "Frieren: Beyond Journey's End" });
@@ -205,8 +260,20 @@ test("MAL progress confirms, conflicts resolve, failures retry, and logout retur
   await expect(page.getByLabel("MyAnimeList sync")).toContainText("Synced with MyAnimeList");
 
   await page.getByLabel("Account", { exact: true }).click();
-  await expect(page.getByText("saba_viewer", { exact: true })).toBeVisible();
-  await expect(page.getByRole("img", { name: "saba_viewer profile picture" })).toBeVisible();
+  const accountMenu = page.getByRole("group", { name: "Account actions" });
+  const stats = accountMenu.getByRole("group", { name: "Account library statistics" });
+  await expect(accountMenu.getByText("saba_viewer", { exact: true })).toBeVisible();
+  const accountPhoto = accountMenu.getByRole("img", { name: "saba_viewer profile picture" });
+  await expect(accountPhoto).toBeVisible();
+  await expect.poll(() => accountPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect(stats.getByText("1", { exact: true })).toBeVisible();
+  await expect(stats.getByText("Mean score")).toBeVisible();
+  await expect(stats.getByText("7.00", { exact: true })).toBeVisible();
+  await expect(accountMenu.getByText(/Last synced/)).toBeVisible();
+  await expect(accountMenu.getByRole("button", { name: "Sync now" })).toBeEnabled();
+  await page.screenshot({ path: "test-results/account-menu-mal-stats.png" });
+  await accountMenu.getByRole("button", { name: "Sync now" }).click();
+  await expect.poll(malLibrary.importCalls).toBe(1);
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/library$/);
   await expect(page.getByRole("alert").filter({ hasText: "could not sign you out" })).toBeVisible();

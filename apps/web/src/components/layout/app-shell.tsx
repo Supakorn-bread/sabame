@@ -4,10 +4,12 @@ import { CalendarDays, Home, Library, LogOut, Search, Sparkles } from "lucide-re
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent } from "react";
 
 import { signOutMalAccount, syncMalAccount } from "@/features/mal/client";
+import { getAccountLibraryStats } from "@/features/tracker/selectors";
 import { useTrackerStore } from "@/features/tracker/store";
+import type { DemoSession } from "@/features/tracker/types";
 
 import { LoadingScreen } from "../loading-screen";
 import { Logo } from "../logo";
@@ -50,7 +52,7 @@ function accountInitials(name: string) {
     .join("") || "S";
 }
 
-function AccountAvatar({ name, picture }: { name: string; picture?: string }) {
+function AccountAvatar({ name, picture, sizes = "44px" }: { name: string; picture?: string; sizes?: string }) {
   const [imageFailed, setImageFailed] = useState(false);
 
   if (!picture || imageFailed) {
@@ -62,10 +64,83 @@ function AccountAvatar({ name, picture }: { name: string; picture?: string }) {
       src={picture}
       alt={`${name} profile picture`}
       fill
-      sizes="44px"
+      sizes={sizes}
       className="object-cover"
       onError={() => setImageFailed(true)}
     />
+  );
+}
+
+function AccountSummary({ session }: { session: DemoSession }) {
+  const library = useTrackerStore((state) => state.library);
+  const malUser = useTrackerStore((state) => state.malUser);
+  const operations = useTrackerStore((state) => state.malSync.operations);
+  const remote = useTrackerStore((state) => state.malSync.remote);
+  const syncStatus = useTrackerStore((state) => state.malSync.status);
+  const lastSyncedAt = useTrackerStore((state) => state.malSync.lastSyncedAt);
+  const stats = useMemo(
+    () => getAccountLibraryStats({ library, malUser, malSync: { operations, remote } }),
+    [library, malUser, operations, remote],
+  );
+  const accountName = malUser?.name ?? session.displayName;
+  const syncSummary = syncStatus === "syncing"
+    ? "Syncing…"
+    : syncStatus === "reconnect"
+      ? "Reconnect required"
+      : syncStatus === "error"
+        ? "Sync failed"
+        : lastSyncedAt
+          ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
+          : "Ready to sync";
+
+  return (
+    <div className="grid min-h-32 grid-cols-[auto_minmax(0,1fr)] items-stretch gap-3">
+      <div
+        data-testid="account-summary-avatar"
+        className="relative grid min-h-32 w-24 shrink-0 place-items-center overflow-hidden rounded-lg border border-[var(--border-strong)] bg-[var(--primary-soft)] text-2xl font-bold text-[var(--primary)] sm:w-32 sm:text-3xl"
+      >
+        <AccountAvatar
+          key={`${accountName}:${malUser?.picture ?? "initials"}`}
+          name={accountName}
+          picture={malUser?.picture}
+          sizes="(max-width: 639px) 96px, 128px"
+        />
+      </div>
+      <div data-testid="account-summary-details" className="flex min-w-0 flex-col gap-2">
+        <p className="text-sm font-bold [overflow-wrap:anywhere]">{accountName}</p>
+        <div role="group" aria-label="Account library statistics" className="grid min-w-0 grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] items-center gap-x-2 text-xs">
+          <dl className="min-w-0">
+            <dt className="text-[var(--text-soft)]">Completed</dt>
+            <dd className="tabular-nums font-semibold">{stats.completedCount}</dd>
+          </dl>
+          <span aria-hidden="true" className="h-4 bg-[var(--border-strong)]" />
+          <dl className="min-w-0">
+            <dt className="text-[var(--text-soft)]">Mean score</dt>
+            <dd className="tabular-nums font-semibold">{stats.meanScore === null ? "Unrated" : stats.meanScore.toFixed(2)}</dd>
+          </dl>
+        </div>
+        <p className="break-words text-xs text-[var(--text-soft)]">
+          {malUser ? syncSummary : "Demo workspace · Saved on this device"}
+        </p>
+        {malUser ? (
+          <button
+            type="button"
+            disabled={syncStatus === "syncing"}
+            onClick={() => void syncMalAccount()}
+            className="min-h-11 w-full rounded-lg border border-[var(--border)] px-3 text-left text-sm font-semibold hover:bg-[var(--primary-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {syncStatus === "syncing" ? "Syncing…" : "Sync now"}
+          </button>
+        ) : (
+          <a
+            href="/api/auth/mal/start"
+            className="flex min-h-11 w-full items-center rounded-lg border border-[var(--border)] px-3 text-sm font-semibold hover:bg-[var(--primary-soft)]"
+          >
+            Connect MyAnimeList
+          </a>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -90,7 +165,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hasHydrated = useTrackerStore((state) => state.hasHydrated);
   const authReady = useTrackerStore((state) => state.authReady);
   const malUser = useTrackerStore((state) => state.malUser);
-  const malSync = useTrackerStore((state) => state.malSync);
   const storageWarning = useTrackerStore((state) => state.storageWarning);
   const logout = useTrackerStore((state) => state.logout);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -172,13 +246,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <AccountAvatar key={`${accountName}:${malUser?.picture ?? "initials"}`} name={accountName} picture={malUser?.picture} />
               </button>
               {accountMenuOpen ? (
-                <div id="account-menu" role="group" aria-label="Account actions" className="absolute right-0 mt-3 w-64 rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] p-4 shadow-xl">
-                  <p className="truncate text-sm font-bold">{accountName}</p>
-                  <p className="mt-1 text-xs text-[var(--text-soft)]">{malUser ? `MyAnimeList account${session.username && session.username !== session.displayName ? ` · @${session.username}` : ""}` : "Demo workspace · Saved on this device"}</p>
-                  {malUser ? <><p className="mt-3 text-xs text-[var(--text-soft)]">{malSync.status === "syncing" ? "Syncing…" : malSync.status === "reconnect" ? "Reconnect required" : malSync.lastSyncedAt ? `Last synced ${new Date(malSync.lastSyncedAt).toLocaleString()}` : "Ready to sync"}</p><button type="button" disabled={malSync.status === "syncing"} onClick={() => void syncMalAccount()} className="mt-2 min-h-11 w-full rounded-lg border border-[var(--border)] px-3 text-left text-sm hover:bg-[var(--primary-soft)]">Sync now</button></> : null}
-                  {!malUser ? <a href="/api/auth/mal/start" className="mt-3 flex min-h-11 w-full items-center rounded-lg border border-[var(--border)] px-3 text-sm font-semibold hover:bg-[var(--primary-soft)]">Connect MyAnimeList</a> : null}
+                <div id="account-menu" role="group" aria-label="Account actions" className="absolute right-0 mt-3 max-h-[calc(100dvh-6rem)] w-96 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] p-3 shadow-xl sm:p-4">
+                  <AccountSummary session={session} />
                   {signOutError ? <p role="alert" className="mt-2 text-xs leading-5 text-rose-600 dark:text-rose-300">{signOutError}</p> : null}
-                  <button type="button" disabled={signingOut} onClick={() => void handleLogout()} className="mt-2 flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm hover:bg-[var(--primary-soft)]"><LogOut size={16} />{signingOut ? "Signing out…" : "Sign out"}</button>
+                  <button
+                    type="button"
+                    disabled={signingOut}
+                    onClick={() => void handleLogout()}
+                    className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-3 text-sm font-semibold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <LogOut size={16} aria-hidden="true" />
+                    {signingOut ? "Signing out…" : "Sign out"}
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -192,7 +271,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main id="main-content" tabIndex={-1} key={pathname} className="route-fade mx-auto w-full max-w-[1440px] flex-1 px-4 pb-24 pt-8 sm:px-6 lg:pb-8">{children}</main>
       <Footer connectedToMal={Boolean(malUser)} />
 
-      <nav aria-label="Mobile primary" className="mobile-primary-nav glass-floating fixed z-50 flex justify-around rounded-xl p-1.5 md:hidden">
+      <nav aria-label="Mobile primary" className="mobile-primary-nav glass-floating fixed z-40 flex justify-around rounded-xl p-1.5 md:hidden">
         {navigation.map((item) => <NavigationLink key={item.href} {...item} compact />)}
       </nav>
     </div>
