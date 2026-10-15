@@ -19,6 +19,8 @@ import { DatabaseService } from "../src/database/prisma.service.js";
 import {
   ACCOUNT_LEASE_MS,
   createMalRepository,
+  MalRepository,
+  type RepositoryClient,
 } from "../src/database/repository.js";
 import { hashToken } from "../src/mal/crypto.js";
 import { createTestDatabase } from "./postgres.js";
@@ -99,6 +101,134 @@ afterAll(async () => {
 });
 
 describe("PostgreSQL MAL repository", () => {
+  it("checks only other unresolved operations for the same account and title", async () => {
+    const { repository, prisma } = testDatabase;
+    for (const id of [7, 8])
+      await repository.saveAccount(
+        makeUser(id),
+        "encrypted",
+        Date.now() + 60_000,
+      );
+    await prisma.operation.createMany({
+      data: Array.from({ length: 2000 }, (_, index) => ({
+        userId: 7n,
+        id: `receipt-${index}`,
+        animeId: "mal-100",
+        payload: {
+          id: `receipt-${index}`,
+          animeId: "mal-100",
+          changes: { watchedEpisodes: 3 },
+          base: null,
+          state: "synced",
+        },
+      })),
+    });
+    await repository.saveOperation(
+      7,
+      makeOperation("current-operation", "mal-100"),
+    );
+    await repository.saveOperation(7, makeOperation("other-title", "mal-200"));
+    await repository.saveOperation(
+      8,
+      makeOperation("other-account", "mal-100"),
+    );
+    const queries: unknown[] = [];
+    const observedRepository = new MalRepository(
+      prisma.$extends({
+        query: {
+          operation: {
+            findMany({ args, query }) {
+              queries.push(args);
+              return query(args);
+            },
+          },
+        },
+      }) as unknown as RepositoryClient,
+    );
+
+    expect(
+      await observedRepository.hasOtherUnresolvedOperation(
+        7,
+        "mal-100",
+        "current-operation",
+      ),
+    ).toBe(false);
+    expect(queries.at(-1)).toEqual({
+      where: {
+        userId: 7n,
+        animeId: "mal-100",
+        id: { not: "current-operation" },
+        payload: { path: ["state"], not: "synced" },
+      },
+      take: 1,
+      select: { id: true },
+    });
+    await repository.saveOperation(7, {
+      ...makeOperation("same-title-conflict", "mal-100"),
+      state: "conflict",
+    });
+    expect(
+      await observedRepository.hasOtherUnresolvedOperation(
+        7,
+        "mal-100",
+        "current-operation",
+      ),
+    ).toBe(true);
+    expect(await prisma.operation.count({ where: { userId: 7n } })).toBe(2003);
+    expect((await repository.operation(7, "receipt-1999"))?.state).toBe(
+      "synced",
+    );
+  });
+
+  it("imports using unresolved title IDs without loading completed receipts", async () => {
+    const { repository, prisma } = testDatabase;
+    for (const id of [7, 8])
+      await repository.saveAccount(
+        makeUser(id),
+        "encrypted",
+        Date.now() + 60_000,
+      );
+    for (const animeId of ["mal-100", "mal-200", "mal-300"])
+      await repository.saveEntry(7, makeItem(animeId));
+    for (const state of ["pending", "failed", "conflict"] as const)
+      await repository.saveOperation(7, {
+        ...makeOperation(`unresolved-${state}`, "mal-100"),
+        state,
+      });
+    await repository.saveOperation(7, {
+      ...makeOperation("completed", "mal-200"),
+      state: "synced",
+    });
+    await repository.saveOperation(
+      8,
+      makeOperation("other-account", "mal-300"),
+    );
+    const queries: unknown[] = [];
+    const observedRepository = new MalRepository(
+      prisma.$extends({
+        query: {
+          operation: {
+            findMany({ args, query }) {
+              queries.push(args);
+              return query(args);
+            },
+          },
+        },
+      }) as unknown as RepositoryClient,
+    );
+
+    expect(await observedRepository.unresolvedAnimeIds(7)).toEqual(
+      new Set(["mal-100"]),
+    );
+    expect(queries.at(-1)).toEqual({
+      where: { userId: 7n, payload: { path: ["state"], not: "synced" } },
+      select: { animeId: true },
+    });
+    await repository.replaceEntries(7, []);
+    expect(await repository.entries(7)).toEqual([makeItem("mal-100")]);
+    expect((await repository.operation(7, "completed"))?.state).toBe("synced");
+  });
+
   it("stores safe MAL IDs as BIGINT and isolates sessions and account data", async () => {
     const { repository, prisma } = testDatabase;
     const largeId = Number.MAX_SAFE_INTEGER;
@@ -221,9 +351,9 @@ describe("PostgreSQL MAL repository", () => {
       makeItem("mal-300", "New from MAL", 0),
     ]);
     expect((await repository.account(8)).imported).toBe(true);
-    expect(await repository.operations(8)).toEqual([
+    expect(await repository.operation(8, "operation-pending-0001")).toEqual(
       makeOperation("operation-pending-0001", "mal-100"),
-    ]);
+    );
 
     await repository.saveOperation(8, {
       ...makeOperation("operation-pending-0001", "mal-100"),

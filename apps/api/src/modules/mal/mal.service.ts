@@ -49,13 +49,11 @@ export class MalService {
   async list(request: Request): Promise<Response> {
     try {
       const user = await currentUser(request, this.repository);
-      return await this.repository.exclusive(user.id, async () =>
-        privateJson(
-          await libraryPage(
-            this.repository,
-            user,
-            new URL(request.url).searchParams.get("cursor"),
-          ),
+      return privateJson(
+        await libraryPage(
+          this.repository,
+          user,
+          new URL(request.url).searchParams.get("cursor"),
         ),
       );
     } catch (error) {

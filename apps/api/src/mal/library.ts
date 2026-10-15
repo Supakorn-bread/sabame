@@ -34,19 +34,20 @@ export async function libraryPage(
       throw new MalError("invalid_request", 400);
     }
   }
-  const account = await repository.account(user.id);
-  if (cursor && cursor.snapshot !== account.revision)
+  const snapshot = await repository.readPage(
+    user.id,
+    cursor?.item,
+    cursor?.operation,
+  );
+  if (cursor && cursor.snapshot !== snapshot.revision)
     throw new MalError("library_changed", 409);
-  const [entries, operations] = await Promise.all([
-    repository.entryPage(user.id, cursor?.item),
-    repository.operationPage(user.id, cursor?.operation),
-  ]);
+  const { entries, operations } = snapshot;
   const items = entries.slice(0, 50);
   const pending = operations.slice(0, 50);
   const response: MalLibraryResponse = {
     user,
-    imported: account.imported,
-    lastSyncedAt: account.lastSyncedAt,
+    imported: snapshot.imported,
+    lastSyncedAt: snapshot.lastSyncedAt,
     items,
     operations: pending,
     ...(entries.length > 50 || operations.length > 50
@@ -54,7 +55,7 @@ export async function libraryPage(
           nextCursor: Buffer.from(
             JSON.stringify({
               userId: user.id,
-              snapshot: account.revision,
+              snapshot: snapshot.revision,
               item: items.at(-1)?.anime.id ?? cursor?.item,
               operation: pending.at(-1)?.id ?? cursor?.operation,
             } satisfies Cursor),

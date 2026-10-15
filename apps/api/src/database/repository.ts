@@ -15,6 +15,14 @@ export interface Account {
   revision: number;
 }
 
+export interface LibraryPageSnapshot {
+  imported: boolean;
+  lastSyncedAt: string | null;
+  revision: number;
+  entries: MalLibraryItem[];
+  operations: MalOperation[];
+}
+
 export type RepositoryClient = PrismaClient | Prisma.TransactionClient;
 export type RepositorySource =
   RepositoryClient | (() => Promise<RepositoryClient>);
@@ -202,35 +210,61 @@ export class MalRepository {
     });
   }
 
-  async entryPage(userId: number, after?: string): Promise<MalLibraryItem[]> {
-    return this.run(async (client) => {
-      const rows = await client.entry.findMany({
-        where: {
-          userId: dbUserId(userId),
-          ...(after ? { animeId: { gt: after } } : {}),
+  async readPage(
+    userId: number,
+    afterItem?: string,
+    afterOperation?: string,
+  ): Promise<LibraryPageSnapshot> {
+    if (this.transactional) throw new Error("nested_repository_transaction");
+    const id = dbUserId(userId);
+    return this.run((client) =>
+      (client as PrismaClient).$transaction(
+        async (tx) => {
+          const account = await tx.account.findUnique({
+            where: { id },
+            select: { imported: true, synced: true, revision: true },
+          });
+          if (!account) throw new MalError("unauthorized", 401);
+          const [entries, operations] = await Promise.all([
+            tx.entry.findMany({
+              where: {
+                userId: id,
+                ...(afterItem ? { animeId: { gt: afterItem } } : {}),
+              },
+              orderBy: { animeId: "asc" },
+              take: 51,
+              select: { payload: true },
+            }),
+            tx.operation.findMany({
+              where: {
+                userId: id,
+                payload: { path: ["state"], not: "synced" },
+                ...(afterOperation ? { id: { gt: afterOperation } } : {}),
+              },
+              orderBy: { id: "asc" },
+              take: 51,
+              select: { payload: true },
+            }),
+          ]);
+          return {
+            imported: account.imported,
+            lastSyncedAt: account.synced?.toISOString() ?? null,
+            revision: account.revision,
+            entries: entries.map(
+              (row) => row.payload as unknown as MalLibraryItem,
+            ),
+            operations: operations.map(
+              (row) => row.payload as unknown as MalOperation,
+            ),
+          };
         },
-        orderBy: { animeId: "asc" },
-        take: 51,
-        select: { payload: true },
-      });
-      return rows.map((row) => row.payload as unknown as MalLibraryItem);
-    });
-  }
-
-  async operationPage(userId: number, after?: string): Promise<MalOperation[]> {
-    return this.run(async (client) => {
-      const rows = await client.operation.findMany({
-        where: {
-          userId: dbUserId(userId),
-          payload: { path: ["state"], not: "synced" },
-          ...(after ? { id: { gt: after } } : {}),
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+          timeout: 10_000,
+          maxWait: 3_000,
         },
-        orderBy: { id: "asc" },
-        take: 51,
-        select: { payload: true },
-      });
-      return rows.map((row) => row.payload as unknown as MalOperation);
-    });
+      ),
+    );
   }
 
   async entry(
@@ -292,12 +326,11 @@ export class MalRepository {
   ): Promise<void> {
     await this.transaction(async (tx) => {
       signal?.throwIfAborted();
-      const [pending, current] = await Promise.all([
-        tx.operations(userId),
+      const [pendingIds, current] = await Promise.all([
+        tx.unresolvedAnimeIds(userId),
         tx.entries(userId),
       ]);
       const incomingIds = new Set(items.map((item) => item.anime.id));
-      const pendingIds = new Set(pending.map((operation) => operation.animeId));
       const retained = current.filter(
         (item) =>
           pendingIds.has(item.anime.id) && !incomingIds.has(item.anime.id),
@@ -339,16 +372,36 @@ export class MalRepository {
     });
   }
 
-  async operations(userId: number): Promise<MalOperation[]> {
+  async hasOtherUnresolvedOperation(
+    userId: number,
+    animeId: string,
+    exceptId: string,
+  ): Promise<boolean> {
     return this.run(async (client) => {
       const rows = await client.operation.findMany({
-        where: { userId: dbUserId(userId) },
-        orderBy: { id: "asc" },
-        select: { payload: true },
+        where: {
+          userId: dbUserId(userId),
+          animeId,
+          id: { not: exceptId },
+          payload: { path: ["state"], not: "synced" },
+        },
+        take: 1,
+        select: { id: true },
       });
-      return rows
-        .map((row) => row.payload as unknown as MalOperation)
-        .filter((operation) => operation.state !== "synced");
+      return rows.length > 0;
+    });
+  }
+
+  async unresolvedAnimeIds(userId: number): Promise<Set<string>> {
+    return this.run(async (client) => {
+      const rows = await client.operation.findMany({
+        where: {
+          userId: dbUserId(userId),
+          payload: { path: ["state"], not: "synced" },
+        },
+        select: { animeId: true },
+      });
+      return new Set(rows.map((row) => row.animeId));
     });
   }
 

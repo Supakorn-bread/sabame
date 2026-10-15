@@ -3,7 +3,10 @@ import { Test, type TestingModule } from "@nestjs/testing";
 import { createTestDatabase } from "./postgres.js";
 import { libraryPage } from "../src/mal/library.js";
 import { libraryItem } from "../src/mal/normalization.js";
-import { MalRepository } from "../src/database/repository.js";
+import {
+  MalRepository,
+  type RepositoryClient,
+} from "../src/database/repository.js";
 import { MalModule } from "../src/modules/mal/mal.module.js";
 import { MalService } from "../src/modules/mal/mal.service.js";
 import { encrypt } from "../src/mal/crypto.js";
@@ -55,6 +58,149 @@ afterEach(async () => {
 });
 
 describe("bounded PostgreSQL library snapshots", () => {
+  it("keeps metadata, entries and operations in one snapshot across a concurrent commit", async () => {
+    await db.repository.replaceEntries(user.id, [item(1)]);
+    const pending = {
+      id: "operation-00000001",
+      animeId: "mal-1",
+      state: "pending" as const,
+      base: status,
+      changes: { watchedEpisodes: 2 },
+    };
+    await db.repository.saveOperation(user.id, pending);
+    const before = await libraryPage(db.repository, user);
+    const accountQueries: unknown[] = [];
+    const observedRepository = new MalRepository(
+      db.prisma.$extends({
+        query: {
+          account: {
+            async findUnique({ args, query }) {
+              const row = await query(args);
+              accountQueries.push(args);
+              await db.repository.transaction(async (writer) => {
+                await writer.removeEntry(user.id, "mal-1");
+                await writer.saveEntry(user.id, item(2));
+                await writer.saveOperation(user.id, {
+                  ...pending,
+                  state: "synced",
+                });
+                await writer.markSynced(user.id);
+              });
+              return row;
+            },
+          },
+        },
+      }) as unknown as RepositoryClient,
+    );
+
+    const during = await libraryPage(observedRepository, user);
+    expect(during).toEqual(before);
+    expect(accountQueries).toEqual([
+      {
+        where: { id: 7n },
+        select: { imported: true, synced: true, revision: true },
+      },
+    ]);
+    expect(await libraryPage(db.repository, user)).toMatchObject({
+      items: [item(2)],
+      operations: [],
+    });
+  });
+
+  it("serves the committed list during a pending import and rejects its cursor after commit", async () => {
+    await db.repository.replaceEntries(
+      user.id,
+      Array.from({ length: 51 }, (_, index) => item(index + 1)),
+    );
+    await db.repository.saveOperation(user.id, {
+      id: "operation-00000001",
+      animeId: "mal-1",
+      state: "pending",
+      base: status,
+      changes: { watchedEpisodes: 2 },
+    });
+    vi.stubEnv("APP_ORIGIN", "http://localhost:3000");
+    vi.stubEnv(
+      "MAL_REDIRECT_URI",
+      "http://localhost:3000/api/auth/mal/callback",
+    );
+    vi.stubEnv("MAL_CLIENT_ID", "test-client");
+    vi.stubEnv("MAL_CLIENT_SECRET", "test-secret");
+    vi.stubEnv("MAL_TOKEN_ENCRYPTION_KEY", "01".repeat(32));
+    const token = await db.repository.createSession(user.id);
+    const headers = { cookie: `sabame_mal_session=${token}` };
+    const list = (cursor?: string) =>
+      mal.list(
+        new Request(
+          `http://localhost:3000/api/mal/list${cursor ? `?cursor=${cursor}` : ""}`,
+          { headers },
+        ),
+      );
+    const beforeResponse = await list();
+    expect(beforeResponse.status).toBe(200);
+    const before = await beforeResponse.json();
+    let providerEntered!: () => void;
+    let releaseProvider!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      providerEntered = resolve;
+    });
+    const blocked = new Promise<void>((resolve) => {
+      releaseProvider = resolve;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        providerEntered();
+        await blocked;
+        return Response.json({
+          data: [
+            {
+              node: { id: 1000, title: "Imported title", num_episodes: 12 },
+              list_status: status,
+            },
+          ],
+          paging: {},
+        });
+      }),
+    );
+    const importing = mal.importList(
+      new Request("http://localhost:3000/api/mal/import", {
+        method: "POST",
+        headers: {
+          ...headers,
+          origin: "http://localhost:3000",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ expectedUserId: user.id }),
+      }),
+    );
+    await entered;
+    let during!: Response;
+    let imported!: Response;
+    try {
+      during = await list();
+    } finally {
+      releaseProvider();
+      imported = await importing;
+    }
+
+    expect(during.status).toBe(200);
+    expect(await during.json()).toEqual(before);
+    expect(imported.status).toBe(200);
+    const stale = await list(before.nextCursor);
+    expect(stale.status).toBe(409);
+    expect(await stale.json()).toMatchObject({
+      error: { code: "library_changed" },
+    });
+    const after = await list();
+    expect(after.status).toBe(200);
+    expect(
+      (await after.json()).items.map(
+        (entry: { anime: { id: string } }) => entry.anime.id,
+      ),
+    ).toEqual(["mal-1", "mal-1000"]);
+  });
+
   it("pages a library larger than Vercel's response ceiling without losing entries or pending operations", async () => {
     const items = Array.from({ length: 501 }, (_, i) => item(i + 1));
     expect(Buffer.byteLength(JSON.stringify(items))).toBeGreaterThan(
@@ -73,9 +219,7 @@ describe("bounded PostgreSQL library snapshots", () => {
     const operations: string[] = [];
     let cursor: string | null = null;
     do {
-      const page = await db.repository.exclusive(user.id, () =>
-        libraryPage(db.repository, user, cursor),
-      );
+      const page = await libraryPage(db.repository, user, cursor);
       expect(Buffer.byteLength(JSON.stringify(page))).toBeLessThan(
         3 * 1024 * 1024,
       );

@@ -127,9 +127,10 @@ export async function mutateList(
     return { operation: existing, item, ...(!item ? { removed: true } : {}) };
   }
   if (
-    (await repository.operations(userId)).some(
-      (operation) =>
-        operation.animeId === animeId && operation.id !== body.operationId,
+    await repository.hasOtherUnresolvedOperation(
+      userId,
+      animeId,
+      body.operationId,
     )
   )
     throw new MalError("sync_busy", 409);

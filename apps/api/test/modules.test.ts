@@ -35,20 +35,13 @@ describe("feature module boundaries and dependency injection", () => {
     const user = { id: 73, name: "di-viewer" };
     const repository = {
       session: vi.fn().mockResolvedValue(user),
-      exclusive: vi.fn(
-        async (_userId: number, operation: () => Promise<unknown>) =>
-          operation(),
-      ),
-      account: vi.fn().mockResolvedValue({
-        user,
-        tokens: "encrypted",
-        expiresAt: Date.now(),
+      readPage: vi.fn().mockResolvedValue({
         imported: true,
         lastSyncedAt: null,
         revision: 0,
+        entries: [],
+        operations: [],
       }),
-      entryPage: vi.fn().mockResolvedValue([]),
-      operationPage: vi.fn().mockResolvedValue([]),
     };
     moduleRef = await Test.createTestingModule({ imports: [MalModule] })
       .overrideProvider(MalRepository)
@@ -70,9 +63,11 @@ describe("feature module boundaries and dependency injection", () => {
       operations: [],
     });
     expect(repository.session).toHaveBeenCalledWith("di-session");
-    expect(repository.account).toHaveBeenCalledWith(user.id);
-    expect(repository.entryPage).toHaveBeenCalledOnce();
-    expect(repository.operationPage).toHaveBeenCalledOnce();
+    expect(repository.readPage).toHaveBeenCalledWith(
+      user.id,
+      undefined,
+      undefined,
+    );
   });
 
   it("resolves the repository lazily through an overridden DatabaseService and runs its shutdown hook", async () => {
