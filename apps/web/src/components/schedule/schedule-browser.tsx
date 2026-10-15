@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, ExternalLink, Globe2, RotateCw, Search, UserRound } from "lucide-react";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { syncMalAccount } from "@/features/mal/client";
 import { useTrackerStore } from "@/features/tracker/store";
 import { currentSeason, isSeason, seasonLabel, validSeasonYear, type SeasonSelection } from "@/features/seasonal/model";
 import { AppShell } from "@/components/layout/app-shell";
+import { ScheduleCalendar, type CalendarView } from "./schedule-calendar";
 import {
   calendarDateInTimeZone,
   displayTime,
@@ -17,7 +18,6 @@ import {
   isScheduleWeek,
   isDelayed,
   shiftIsoWeek,
-  type AirType,
   type ScheduleAnime,
   type ScheduleWeek,
 } from "@/features/schedule/model";
@@ -49,13 +49,6 @@ function isScheduleResponse(value: unknown): value is ScheduleResponse {
     && Number.isSafeInteger(response.matchedAnimeCount) && (response.matchedAnimeCount as number) >= 0
     && Array.isArray(response.items);
 }
-const airTypeOptions: { value: AirType; label: string }[] = [
-  { value: "all", label: "All broadcasts" },
-  { value: "sub", label: "Sub" },
-  { value: "dub", label: "Dub" },
-  { value: "raw", label: "Raw" },
-];
-
 const emptyScheduleItems: ScheduleAnime[] = [];
 
 const timeSlots = [
@@ -64,6 +57,16 @@ const timeSlots = [
   { id: "evening", label: "Evening", range: "18:00 - 22:00", lower: 18, upper: 22 },
   { id: "late-night", label: "Late night", range: "22:00 - 06:00", lower: 22, upper: 6 },
 ] as const;
+
+function subscribeDesktop(onChange: () => void) {
+  const media = window.matchMedia?.("(min-width: 1024px)");
+  media?.addEventListener("change", onChange);
+  return () => media?.removeEventListener("change", onChange);
+}
+
+function desktopSnapshot() {
+  return window.matchMedia?.("(min-width: 1024px)").matches ?? false;
+}
 
 function getLocalTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -108,6 +111,7 @@ function airingLabel(item: ScheduleAnime) {
 }
 
 function AnimeScheduleCard({ anime, timeZone }: { anime: ScheduleAnime; timeZone: string }) {
+  const [failedImagePath, setFailedImagePath] = useState<string | null>(null);
   const delayed = isDelayed(anime);
   const date = getEffectiveDate(anime);
   const airType = anime.airType.toLowerCase();
@@ -116,12 +120,13 @@ function AnimeScheduleCard({ anime, timeZone }: { anime: ScheduleAnime; timeZone
   const delayNote = delayed
     ? anime.delayedText ?? (date ? `Rescheduled to ${displayTime(date, timeZone)}` : "A new time has not been announced.")
     : null;
+  const showPoster = anime.imageVersionRoute !== null && anime.imageVersionRoute !== failedImagePath;
 
   return (
     <article className="group flex min-h-[150px] gap-4 rounded-xl border border-[var(--border)] bg-[var(--bg-lowest)] p-3 transition-colors hover:border-[var(--border-strong)] sm:gap-5 sm:p-4">
       <div className="relative grid aspect-[4/5] w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-[var(--primary-soft)] via-[var(--bg-high)] to-[var(--bg-low)] text-3xl font-black text-[var(--primary)] sm:w-28">
-        {anime.imageVersionRoute
-          ? <Image src={`https://img.animeschedule.net/production/assets/public/img/${anime.imageVersionRoute}`} alt="" fill sizes="112px" className="object-cover" />
+        {showPoster
+          ? <Image src={`https://img.animeschedule.net/production/assets/public/img/${anime.imageVersionRoute}`} alt="" fill sizes="112px" className="object-cover" onError={() => setFailedImagePath(anime.imageVersionRoute)} />
           : <span aria-hidden="true">{anime.title.trim().charAt(0).toLocaleUpperCase()}</span>}
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-3">
@@ -156,9 +161,10 @@ function AnimeScheduleCard({ anime, timeZone }: { anime: ScheduleAnime; timeZone
 export function ScheduleBrowser() {
   const [week, setWeek] = useState<ScheduleWeek | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [view, setView] = useState<CalendarView>("week");
+  const isDesktop = useSyncExternalStore(subscribeDesktop, desktopSnapshot, () => false);
   const [zoneChoice, setZoneChoice] = useState<ZoneChoice>("local");
   const [localZone, setLocalZone] = useState("UTC");
-  const [airType, setAirType] = useState<AirType>("all");
   const [query, setQuery] = useState("");
   const [storedScheduleState, setScheduleState] = useState<ScheduleLoadState>({ status: "loading" });
   const [isSyncPending, startSyncTransition] = useTransition();
@@ -213,7 +219,7 @@ export function ScheduleBrowser() {
           year: String(requestedWeek.year),
           week: String(requestedWeek.week),
           tz: timeZone,
-          airType,
+          airType: "raw",
         });
         const response = await fetch("/api/schedule?" + params, {
           cache: "no-store",
@@ -269,7 +275,7 @@ export function ScheduleBrowser() {
       cancelled = true;
       controller.abort();
     };
-  }, [accountKey, airType, attempt, malSessionVersion, malSyncLastSyncedAt, malUserId, timeZone, week]);
+  }, [accountKey, attempt, malSessionVersion, malSyncLastSyncedAt, malUserId, timeZone, week]);
 
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -310,6 +316,12 @@ export function ScheduleBrowser() {
     ...slot,
     items: scheduledForDay.filter((item) => slotFor(item, timeZone) === slot.id),
   }));
+  const activeView = isDesktop ? view : "day";
+  const scheduledForWeek = filteredItems.filter((item) => {
+    const date = getEffectiveDate(item);
+    return date !== null && days.some((day) => calendarDateKey(day) === getDateKey(new Date(date), timeZone));
+  });
+  const visibleScheduled = activeView === "week" ? scheduledForWeek : scheduledForDay;
   const tbdItems = filteredItems.filter((item) => getEffectiveDate(item) === null);
   const nextWeek = shiftIsoWeek(week, 1);
   const previousWeek = shiftIsoWeek(week, -1);
@@ -360,7 +372,7 @@ export function ScheduleBrowser() {
         <div className="min-w-0">
           <p className="eyebrow mb-3 text-[var(--primary)]">ANIME SCHEDULE / WEEKLY LINEUP</p>
           <h1 id="schedule-heading" className="screen-title">Broadcast schedule</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">{seasonTitle ? "Follow broadcasts for " + seasonTitle + " anime saved to your MyAnimeList, with times grouped in your selected time zone." : "Follow broadcasts for anime saved to your MyAnimeList, with times grouped in your selected time zone."}</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">{seasonTitle ? "See this week's RAW broadcasts for " + seasonTitle + " and ongoing titles marked Watching in your MyAnimeList, with times grouped in your selected time zone." : "See this week's RAW broadcasts for current-season and ongoing titles marked Watching in your MyAnimeList, with times grouped in your selected time zone."}</p>
         </div>
         {showSchedulePanel ? <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-lowest)] p-3 sm:flex-row sm:items-center">
           <div className="flex min-h-11 items-center rounded-lg border border-[var(--border)] bg-[var(--bg-low)] p-1">
@@ -386,7 +398,7 @@ export function ScheduleBrowser() {
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]"><UserRound aria-hidden="true" size={22} /></span>
             <div className="min-w-0">
               <h2 id="schedule-connect-heading" className="text-lg font-extrabold">Connect MyAnimeList to personalize your schedule</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">Your broadcast lineup is matched against titles in your imported MyAnimeList list. Your list stays private to your account.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">Current-season and ongoing RAW broadcasts are matched against the Watching titles in your imported MyAnimeList list. Your list stays private to your account.</p>
               {malConfigured ? <a href="/api/auth/mal/start" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--primary-container)] px-4 text-sm font-extrabold text-[#312a58]">Connect MyAnimeList <ExternalLink aria-hidden="true" size={14} /></a> : <p className="mt-4 text-sm font-semibold text-[var(--text-soft)]">MyAnimeList connection is not configured on this server yet.</p>}
             </div>
           </div>
@@ -396,7 +408,7 @@ export function ScheduleBrowser() {
       {scheduleState.status === "list_not_imported" ? (
         <section aria-labelledby="schedule-import-heading" className="mb-6 rounded-2xl border border-[var(--border)] bg-[var(--bg-lowest)] p-6 sm:p-8">
           <h2 id="schedule-import-heading" className="text-lg font-extrabold">Import your MyAnimeList list to build your schedule</h2>
-          <p role="status" aria-live="polite" className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">{syncBusy ? "Syncing your MyAnimeList list… Your saved lineup will appear when the import finishes." : malSyncStatus === "error" ? "The latest list sync needs attention. " + (malSyncError ?? "Try importing again.") : "A list import is needed before we can match this season’s broadcasts to your saved anime."}</p>
+          <p role="status" aria-live="polite" className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">{syncBusy ? "Syncing your MyAnimeList list… Your current-season and ongoing Watching lineup will appear when the import finishes." : malSyncStatus === "error" ? "The latest list sync needs attention. " + (malSyncError ?? "Try importing again.") : "A list import is needed before we can match current-season and ongoing RAW broadcasts to your Watching titles."}</p>
           <button type="button" disabled={syncBusy || !malUserId} onClick={syncList} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--primary-container)] px-4 text-sm font-extrabold text-[#312a58] disabled:cursor-not-allowed disabled:opacity-50"><RotateCw aria-hidden="true" size={15} className={syncBusy ? "animate-spin" : ""} />{syncBusy ? "Syncing list…" : malSyncStatus === "error" ? "Retry list import" : "Import MyAnimeList list"}</button>
         </section>
       ) : null}
@@ -406,8 +418,8 @@ export function ScheduleBrowser() {
           <div className="flex items-start gap-4">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]"><CalendarDays aria-hidden="true" size={22} /></span>
             <div>
-              <h2 id="schedule-no-match-heading" className="text-lg font-extrabold">No {seasonTitle} broadcasts match your list yet</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">We checked your imported MyAnimeList titles against the current season. Try syncing your list again later, or explore the <a href="/seasonal" className="font-semibold text-[var(--primary)] underline underline-offset-4">seasonal anime guide</a>.</p>
+              <h2 id="schedule-no-match-heading" className="text-lg font-extrabold">No current-season or ongoing broadcasts match your Watching titles yet</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-soft)]">We checked your Watching titles against the {seasonTitle ?? "current-season"} and ongoing catalogs. Try syncing your list again later, or explore the <a href="/seasonal" className="font-semibold text-[var(--primary)] underline underline-offset-4">seasonal anime guide</a>.</p>
               {malUserId ? <button type="button" disabled={syncBusy} onClick={syncList} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--border-strong)] px-4 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-50"><RotateCw aria-hidden="true" size={15} className={syncBusy ? "animate-spin" : ""} />Sync MyAnimeList</button> : null}
             </div>
           </div>
@@ -415,23 +427,19 @@ export function ScheduleBrowser() {
       ) : null}
 
       {showSchedulePanel ? <>
-      <section aria-label="Schedule filters and search" className="mb-5 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-lowest)] p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div role="group" aria-label="Broadcast language" className="flex flex-wrap gap-2">
-          {airTypeOptions.map((option) => (
-            <button key={option.value} type="button" aria-pressed={airType === option.value} onClick={() => setAirType(option.value)} className={`min-h-10 rounded-full border px-4 text-sm font-bold transition-colors ${airType === option.value ? "border-transparent bg-[var(--primary-container)] text-[#312a58]" : "border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--bg-low)]"}`}>
-              {option.label}
-            </button>
-          ))}
-        </div>
+      <section aria-label="Schedule search" className="mb-5 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-lowest)] p-4 sm:flex-row sm:items-center sm:justify-end">
         <label className="relative block min-w-0 sm:w-64">
           <span className="sr-only">Search this week schedule</span>
           <Search aria-hidden="true" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" />
           <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this week..." className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] pl-9 pr-3 text-base sm:text-sm" />
         </label>
-        <p className="text-xs leading-5 text-[var(--text-faint)]">The AnimeSchedule Sub view can include Raw episodes when no subtitled listing is available.</p>
       </section>
 
-      <section aria-label="Days of the week" className="mb-6 grid grid-cols-4 gap-2 lg:grid-cols-7">
+      <div role="group" aria-label="Calendar view" className="mb-5 hidden gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-lowest)] p-1 lg:inline-flex">
+        {(["week", "day"] as const).map((choice) => <button key={choice} type="button" aria-pressed={view === choice} onClick={() => setView(choice)} className={`min-h-11 rounded-lg px-5 text-sm font-bold ${view === choice ? "bg-[var(--primary-soft)] text-[var(--primary)]" : "text-[var(--text-soft)]"}`}>{choice === "week" ? "Week" : "Day"}</button>)}
+      </div>
+
+      <section aria-label="Days of the week" className={`mb-6 grid grid-cols-4 gap-2 lg:grid-cols-7 ${activeView === "week" ? "hidden" : ""}`}>
         {days.map((day, index) => {
           const active = selectedDay === index;
           const dayLabel = calendarLabel(day, { weekday: "short" });
@@ -453,10 +461,10 @@ export function ScheduleBrowser() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="eyebrow mb-2 text-[var(--primary)]">{timezoneLabel}</p>
-            <h2 id="schedule-day-heading" className="flex items-center gap-2 text-xl font-extrabold sm:text-2xl"><CalendarDays aria-hidden="true" size={22} /> {selectedDateLabel}</h2>
+            <h2 id="schedule-day-heading" className="flex items-center gap-2 text-xl font-extrabold sm:text-2xl"><CalendarDays aria-hidden="true" size={22} /> {activeView === "week" ? "This week" : selectedDateLabel}</h2>
           </div>
           <p role="status" aria-live="polite" className="text-xs text-[var(--text-soft)]">
-            {loading ? "Loading broadcast schedule..." : error ? "Schedule data could not be loaded." : `${scheduledForDay.length} ${scheduledForDay.length === 1 ? "title" : "titles"}`}
+            {loading ? "Loading broadcast schedule..." : error ? "Schedule data could not be loaded." : `${visibleScheduled.length} ${visibleScheduled.length === 1 ? "title" : "titles"}`}
           </p>
         </div>
 
@@ -470,24 +478,31 @@ export function ScheduleBrowser() {
                 ? "Add an AnimeSchedule application token to the server environment as ANIMESCHEDULE_API_TOKEN, then restart the app."
                 : error === "invalid_payload"
                   ? errorSource === "catalog" ? "AnimeSchedule returned an unexpected catalog format. Try again shortly." : "AnimeSchedule returned an unexpected broadcast format. Try again shortly."
-                  : errorSource === "catalog" ? "We could not load the current-season AnimeSchedule catalog. Check the connection and try again." : "We could not reach the AnimeSchedule broadcast timetable. Check the connection and try again."}
+                  : errorSource === "catalog" ? "We could not load the current-season and ongoing AnimeSchedule catalogs. Check the connection and try again." : "We could not reach the AnimeSchedule RAW broadcast timetable. Check the connection and try again."}
             </p>
             {error === "not_configured" ? <a href="https://animeschedule.net/api/v3/documentation/anime" target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-[var(--primary)] underline underline-offset-4">AnimeSchedule API setup <ExternalLink aria-hidden="true" size={14} /></a> : null}
             <div><button type="button" onClick={retry} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--primary-container)] px-4 text-sm font-extrabold text-[#312a58]"><RotateCw aria-hidden="true" size={15} /> Try again</button></div>
           </div>
         ) : null}
 
-        {!loading && !error && scheduledForDay.length === 0 ? (
+        {!loading && !error && visibleScheduled.length === 0 ? (
           <div className="grid min-h-64 place-items-center rounded-xl border border-dashed border-[var(--border-strong)] px-5 py-12 text-center">
             <div>
               <CalendarDays aria-hidden="true" className="mx-auto mb-4 text-[var(--primary)]" size={30} />
-              <h3 className="text-lg font-extrabold">{query.trim() ? tbdItems.length > 0 ? "No scheduled broadcasts match this day" : "No titles match your search" : "No broadcasts listed for this day"}</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-soft)]">{query.trim() ? tbdItems.length > 0 ? "Matching time-to-be-confirmed entries are listed for the week below." : "Try another title or clear the search." : "Choose another day or broadcast language to explore the week."}</p>
+              <h3 className="text-lg font-extrabold">{query.trim() ? tbdItems.length > 0 ? activeView === "week" ? "No scheduled broadcasts match this week" : "No scheduled broadcasts match this day" : "No titles match your search" : activeView === "week" ? "No broadcasts listed for this week" : "No broadcasts listed for this day"}</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--text-soft)]">{query.trim() ? tbdItems.length > 0 ? "Matching time-to-be-confirmed entries are listed for the week below." : "Try another title or clear the search." : activeView === "week" ? "Choose another week to explore your broadcasts." : "Choose another day to explore the week."}</p>
             </div>
           </div>
         ) : null}
 
-        {!loading && !error && scheduledForDay.length > 0 ? (
+        {!loading && !error && visibleScheduled.length > 0 ? activeView === "week" ? <ScheduleCalendar
+          key={`${accountKey}:${week.year}:${week.week}:${timeZone}:${query}:${activeView}:${selectedDay}`}
+          days={days}
+          items={filteredItems}
+          timeZone={timeZone}
+          view={activeView}
+          selectedDay={selectedDay}
+        /> : (
           <div className="space-y-8">
             {countsBySlot.map((slot) => slot.items.length > 0 ? (
               <section key={slot.id} aria-labelledby={`slot-${slot.id}`}>

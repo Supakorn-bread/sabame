@@ -1,7 +1,8 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { currentSeason } from "@/features/seasonal/model";
+import type { ScheduleAnime } from "@/features/schedule/model";
 import { trackerStore } from "@/features/tracker/store";
 import { ScheduleBrowser } from "./schedule-browser";
 
@@ -24,10 +25,10 @@ const delayedItem = {
   subtractedEpisodeNumber: null,
   status: "Delayed",
   airingStatus: null,
-  airType: "Sub",
+  airType: "Raw",
 };
 
-function readyResponse(items = [delayedItem], matchedAnimeCount = 1) {
+function readyResponse(items: ScheduleAnime[] = [delayedItem], matchedAnimeCount = 1) {
   return Response.json({
     state: "ready",
     season: currentSeason(),
@@ -57,7 +58,7 @@ afterEach(() => {
 });
 
 describe("ScheduleBrowser", () => {
-  it("shows delayed time-TBD data, requests the chosen filter and Japan time zone", async () => {
+  it("shows delayed time-TBD data and requests the raw schedule in Japan time", async () => {
     const fetcher = vi.fn().mockResolvedValue(readyResponse());
     vi.stubGlobal("fetch", fetcher);
     const user = userEvent.setup();
@@ -68,14 +69,29 @@ describe("ScheduleBrowser", () => {
     expect(screen.getByText("A new broadcast date is pending")).toBeVisible();
     expect(screen.getByText(/Episode 4/)).toBeVisible();
     expect(screen.getByText(new RegExp(currentSeason().season, "i"))).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: "Dub" }));
-    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
-    expect(String(fetcher.mock.calls[1][0])).toContain("airType=dub");
+    await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    expect(String(fetcher.mock.calls[0][0])).toContain("airType=raw");
+    expect(screen.queryByRole("group", { name: "Broadcast language" })).not.toBeInTheDocument();
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Broadcast time zone" }), "japan");
-    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(3));
-    expect(String(fetcher.mock.calls[2][0])).toContain("tz=Asia%2FTokyo");
+    await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    expect(String(fetcher.mock.calls[1][0])).toContain("tz=Asia%2FTokyo");
+    expect(String(fetcher.mock.calls[1][0])).toContain("airType=raw");
+  });
+
+  it("shows scheduled day broadcasts as full cards grouped by time", async () => {
+    const scheduledAt = new Date();
+    const fetcher = vi.fn().mockResolvedValue(readyResponse([
+      { ...delayedItem, episodeDate: scheduledAt.toISOString(), status: "Upcoming", delayedText: null },
+    ]));
+    vi.stubGlobal("fetch", fetcher);
+    render(<ScheduleBrowser />);
+
+    expect(await screen.findByRole("heading", { name: "Evening Comet" })).toBeVisible();
+    expect(screen.getByText("Episode 4")).toBeVisible();
+    expect(screen.getByText("RAW")).toBeVisible();
+    expect(screen.getByRole("heading", { name: /^(Morning|Daytime|Evening|Late night)$/ })).toBeVisible();
+    expect(screen.queryByRole("table", { name: "Daily broadcast calendar" })).not.toBeInTheDocument();
   });
 
   it("shows a connect prompt for unauthenticated schedule requests", async () => {
@@ -85,6 +101,7 @@ describe("ScheduleBrowser", () => {
     render(<ScheduleBrowser />);
 
     expect(await screen.findByRole("heading", { name: "Connect MyAnimeList to personalize your schedule" })).toBeVisible();
+    expect(screen.getByText(/Current-season and ongoing RAW broadcasts are matched against the Watching titles/)).toBeVisible();
     expect(screen.getByRole("link", { name: /Connect MyAnimeList/ })).toHaveAttribute("href", "/api/auth/mal/start");
     expect(screen.queryByRole("group", { name: "Broadcast language" })).not.toBeInTheDocument();
   });
@@ -100,6 +117,7 @@ describe("ScheduleBrowser", () => {
     render(<ScheduleBrowser />);
 
     expect(await screen.findByRole("heading", { name: "Import your MyAnimeList list to build your schedule" })).toBeVisible();
+    expect(screen.getByText(/match current-season and ongoing RAW broadcasts to your Watching titles/)).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Import MyAnimeList list" }));
     expect(syncMalAccountMock).toHaveBeenCalledOnce();
     expect(await screen.findByText(/Syncing your MyAnimeList list/)).toBeVisible();
@@ -107,14 +125,29 @@ describe("ScheduleBrowser", () => {
     expect(screen.queryByRole("group", { name: "Broadcast language" })).not.toBeInTheDocument();
   });
 
-  it("shows a current-season no-match state without empty timetable controls", async () => {
+  it("shows a current-season and ongoing no-match state without empty timetable controls", async () => {
     const fetcher = vi.fn().mockResolvedValue(readyResponse([], 0));
     vi.stubGlobal("fetch", fetcher);
     render(<ScheduleBrowser />);
 
-    expect(await screen.findByRole("heading", { name: new RegExp("No " + currentSeason().season, "i") })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "No current-season or ongoing broadcasts match your Watching titles yet" })).toBeVisible();
     expect(screen.getByRole("link", { name: "seasonal anime guide" })).toHaveAttribute("href", "/seasonal");
     expect(screen.queryByRole("group", { name: "Broadcast language" })).not.toBeInTheDocument();
+  });
+
+  it("replaces a failed poster with the anime title initial", async () => {
+    const fetcher = vi.fn().mockResolvedValue(readyResponse([
+      { ...delayedItem, imageVersionRoute: "covers/evening-comet-v1.jpg" },
+    ]));
+    vi.stubGlobal("fetch", fetcher);
+    render(<ScheduleBrowser />);
+
+    expect(await screen.findByRole("heading", { name: "Evening Comet" })).toBeVisible();
+    const poster = screen.getByAltText("");
+    fireEvent.error(poster);
+
+    expect(await screen.findByText("E")).toBeVisible();
+    expect(screen.queryByAltText("")).not.toBeInTheDocument();
   });
 
   it("hides the prior account schedule immediately while the next account loads", async () => {
@@ -172,7 +205,7 @@ describe("ScheduleBrowser", () => {
     render(<ScheduleBrowser />);
 
     expect(await screen.findByRole("heading", { name: "The broadcast schedule is taking a break" })).toBeVisible();
-    expect(screen.getByText("We could not reach the AnimeSchedule broadcast timetable. Check the connection and try again.")).toBeVisible();
+    expect(screen.getByText("We could not reach the AnimeSchedule RAW broadcast timetable. Check the connection and try again.")).toBeVisible();
     expect(screen.queryByText("upstream detail")).not.toBeInTheDocument();
   });
 
