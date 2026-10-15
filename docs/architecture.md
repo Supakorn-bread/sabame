@@ -88,6 +88,14 @@ starts both apps. Restart it after editing a shared package.
 | Frontend/backend production build | `npm run build` / `npm run build:api` |
 | Both builds | `npm run build:all` |
 | Complete browser flows | `npm run test:e2e` |
+| Full release checks and configured browser flows | `TEST_DATABASE_URL=postgresql://sabame:sabame_local@127.0.0.1:55432/sabame_test npm run verify:release` |
+
+`npm run verify:release` requires a local PostgreSQL database named `sabame_test`
+and installed Playwright Chromium. It rejects remote hosts, other database
+names, and URL query strings or fragments before it runs checks. It applies
+committed migrations to that database before the configured browser flows.
+The browser step builds both apps through the Playwright web servers before it
+runs the browser tests.
 
 Frontend environment variables live in `apps/web/.env.local`; backend variables
 live in `apps/api/.env`. Each app has its own `.env.example` and `package.json`.

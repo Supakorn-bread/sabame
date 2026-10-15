@@ -33,10 +33,11 @@
     "db:stop": "docker compose stop",
     "lint:web": "npm run lint -w @sabame/web",
     "lint:api": "npm run lint -w @sabame/api",
-    "test:architecture": "node --test scripts/eslint/*.test.mjs",
+    "test:architecture": "node --test scripts/eslint/*.test.mjs scripts/verify-release.test.mjs",
     "format:api": "npm run format -w @sabame/api",
     "format:check:api": "npm run format:check -w @sabame/api",
     "test:catalog": "npm run build:shared && npm run test -w @sabame/catalog",
+    "verify:release": "node scripts/verify-release.mjs",
     "dev:api": "npm run dev -w @sabame/api",
     "predev:api": "npm run build:shared && npm run db:generate",
     "predev:web": "npm run build:shared"

@@ -7,8 +7,6 @@ test("frontend forwards API requests to Nest and leaves playback in Next", async
   expect(await session.json()).toEqual({ configured: Boolean(process.env.TEST_DATABASE_URL), user: null });
   expect(session.headers()["cache-control"]).toContain("no-store");
 
-  // Invalid parameters must be rejected by the migrated controller, before
-  // accessing external services or leaking a framework-default error response.
   const seasonal = await request.get("/api/anime/seasonal?year=1900&season=summer");
   expect(seasonal.status()).toBe(400);
   expect(await seasonal.json()).toMatchObject({ error: { code: "invalid_request" } });
@@ -28,7 +26,7 @@ test("unconfigured OAuth redirects back to the frontend login page", async ({ re
   expect(destination.searchParams.get("mal_error")).toBe("not_configured");
 });
 
-test("OAuth cookies survive the Next-to-Nest boundary and consent denial consumes state", async ({ context, baseURL }) => {
+test("configured OAuth cookies survive the Next-to-Nest boundary and consent denial consumes state @release-oauth", async ({ context, baseURL }) => {
   const request = context.request;
   test.skip(!process.env.TEST_DATABASE_URL, "Requires the migrated local sabame_test database");
   const start = await request.get("/api/auth/mal/start", { maxRedirects: 0 });

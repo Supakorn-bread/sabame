@@ -42,7 +42,7 @@ export default defineConfig({
         MAL_TOKEN_ENCRYPTION_KEY: testDatabase ? "01".repeat(32) : "",
         DATABASE_URL: testDatabase,
         DATABASE_SCHEMA: "",
-        DIRECT_URL: "",
+        DIRECT_URL: testDatabase,
       },
       reuseExistingServer: false,
       timeout: 120_000,
