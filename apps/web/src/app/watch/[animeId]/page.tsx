@@ -11,8 +11,17 @@ import { SimulatedPlayer } from "@/components/simulated-player";
 import { MediaPlayer } from "@/components/media-player";
 import { useCatalogAnime, useCatalogEpisodes } from "@/features/media/use-catalog";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
+import { getTrackingStatus, type TrackingStatus } from "@/features/tracker/selectors";
 import { useTrackerStore } from "@/features/tracker/store";
 import type { LibraryStatus } from "@/features/tracker/types";
+
+const trackingMessages: Record<TrackingStatus, string> = {
+  untracked: "Not on your MyAnimeList",
+  confirmed: "Progress matches the latest MyAnimeList sync.",
+  pending: "Change saved locally and waiting for MyAnimeList confirmation.",
+  conflict: "Choose which progress to keep in the sync notice above.",
+  failed: "This change could not sync yet. Retry it from the sync notice above.",
+};
 
 export default function WatchPage() {
   const { animeId } = useParams<{ animeId: string }>();
@@ -21,7 +30,8 @@ export default function WatchPage() {
   const [demo, setDemo] = useState(false);
   const entry = useTrackerStore((state) => state.library[animeId]);
   const malUser = useTrackerStore((state) => state.malUser);
-  const malOperation = useTrackerStore((state) => state.malSync.operations.find((operation) => operation.animeId === animeId && operation.state !== "synced"));
+  const trackingStatus = useTrackerStore((state) => getTrackingStatus(state, animeId));
+  const authReady = useTrackerStore((state) => state.authReady);
   const ensureEntry = useTrackerStore((state) => state.ensureEntry);
   const setStatus = useTrackerStore((state) => state.setStatus);
   const setWatchedEpisodes = useTrackerStore((state) => state.setWatchedEpisodes);
@@ -29,7 +39,7 @@ export default function WatchPage() {
   const setPlaybackPosition = useTrackerStore((state) => state.setPlaybackPosition);
   const markEpisodeComplete = useTrackerStore((state) => state.markEpisodeComplete);
 
-  useEffect(() => { if (anime && !entry) ensureEntry(anime.id); }, [anime, ensureEntry, entry]);
+  useEffect(() => { if (authReady && anime && !entry) ensureEntry(anime.id); }, [authReady, anime, ensureEntry, entry]);
   const episode = entry?.currentEpisode;
   const canSyncProgress = !malUser || /^mal-[1-9]\d*$/.test(animeId);
   const updatePosition = useCallback((seconds: number, duration?: number) => setPlaybackPosition(animeId, seconds, duration, episode), [animeId, episode, setPlaybackPosition]);
@@ -51,6 +61,10 @@ export default function WatchPage() {
   if (!entry) return <AppShell><div className="h-[70vh]" /></AppShell>;
 
   const upcomingEpisodes = catalogEpisodes.length ? catalogEpisodes : Array.from({ length: Math.min(anime.totalEpisodes ?? entry.currentEpisode, 2000) }, (_, index) => index + 1);
+  let trackingMessage = "Changes save automatically in this browser.";
+  if (!canSyncProgress) trackingMessage = "Tracking is disabled for this non-MAL catalog entry.";
+  else if (malUser) trackingMessage = trackingMessages[trackingStatus];
+  const untracked = Boolean(malUser) && trackingStatus === "untracked";
 
   return (
     <AppShell>
@@ -62,7 +76,7 @@ export default function WatchPage() {
 
           <div className="grid grid-cols-1 gap-6">
             <section className="flex flex-col gap-4" aria-labelledby="anime-title">
-              <div><h1 id="anime-title" className="screen-title">{anime.title}</h1><div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--text-soft)]"><span className="flex items-center gap-1 text-[var(--gold)]"><Star size={13} fill="currentColor" />{anime.score ?? "Unrated"} community score</span>{entry.personalScore ? <><span>•</span><span>{entry.personalScore}/10 your MAL score</span></> : null}<span>•</span><span>TV ({anime.totalEpisodes ?? "?"} eps)</span></div></div>
+              <div><h1 id="anime-title" className="screen-title">{anime.title}</h1><div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--text-soft)]"><span className="flex items-center gap-1 text-[var(--gold)]"><Star size={13} fill="currentColor" />{anime.score ?? "Unrated"} community score</span>{!untracked && entry.personalScore ? <><span>•</span><span>{entry.personalScore}/10 your MAL score</span></> : null}<span>•</span><span>TV ({anime.totalEpisodes ?? "?"} eps)</span></div></div>
               <div className="flex flex-wrap gap-2">{anime.genres.map((genre) => <span key={genre} className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-xs text-[var(--primary)]">{genre}</span>)}</div>
               <p className="text-sm leading-6 text-[var(--text-soft)]">{anime.synopsis}</p>
               <div className="glass-panel grid grid-cols-2 gap-4 rounded-xl p-4">
@@ -73,11 +87,11 @@ export default function WatchPage() {
             <section className="glass-floating h-fit rounded-xl p-5" aria-labelledby="mal-heading">
               <h2 id="mal-heading" className="eyebrow border-b border-[var(--border)] pb-3">Your progress</h2>
               {!canSyncProgress ? <div role="status" className="mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-3 text-xs leading-5 text-amber-800 dark:text-amber-100">This is a Sabame demo catalog title, so its progress cannot be sent to your MyAnimeList account. <Link href="/search" className="font-bold underline">Find the MyAnimeList title</Link> to track it safely.</div> : null}
-              <div className="mt-4 space-y-3 text-sm">
+              {untracked && canSyncProgress ? <div className="mt-4"><p role="status" className="text-sm text-[var(--text-soft)]">Not on your MyAnimeList</p><button type="button" onClick={() => setStatus(anime.id, "planned")} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--primary-container)] px-4 text-sm font-bold text-[#312a58]"><Plus size={15} aria-hidden="true" />Add to MyAnimeList</button></div> : <div className="mt-4 space-y-3 text-sm">
                 <label className="flex items-center justify-between gap-2"><span className="text-[var(--text-soft)]">Status</span><select disabled={!canSyncProgress} value={entry.status} onChange={(event) => setStatus(anime.id, event.target.value as LibraryStatus)} className="min-h-11 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-xs"><option value="watching">Watching</option><option value="planned">Plan to Watch</option><option value="on_hold">On hold</option><option value="completed">Completed</option><option value="dropped">Dropped</option></select></label>
                 <div className="flex items-center justify-between"><span className="text-[var(--text-soft)]">Episodes</span><span className="flex items-center gap-2"><button type="button" disabled={!canSyncProgress || entry.watchedEpisodes === 0} onClick={() => setWatchedEpisodes(anime.id, entry.watchedEpisodes - 1)} className="grid h-11 w-11 shrink-0 place-items-center rounded border border-[var(--border)]" aria-label="Decrease watched episodes"><Minus size={11} /></button><span>{entry.watchedEpisodes} / {anime.totalEpisodes ?? "?"}</span><button type="button" disabled={!canSyncProgress || entry.watchedEpisodes === anime.totalEpisodes} onClick={() => setWatchedEpisodes(anime.id, entry.watchedEpisodes + 1)} className="grid h-11 w-11 shrink-0 place-items-center rounded border border-[var(--border)]" aria-label="Increase watched episodes"><Plus size={11} /></button></span></div>
-              </div>
-              <p role="status" className="mt-5 text-xs leading-5 text-[var(--text-soft)]">{entry.watchedEpisodes} episodes watched · {entry.status}. {!canSyncProgress ? "Tracking is disabled for this non-MAL catalog entry." : malUser ? malOperation?.state === "conflict" ? "Choose which progress to keep in the sync notice above." : malOperation?.state === "failed" ? "This change could not sync yet. Retry it from the sync notice above." : malOperation ? "Change saved locally and waiting for MyAnimeList confirmation." : "Progress matches the latest MyAnimeList sync." : "Changes save automatically in this browser."}</p>
+              </div>}
+              <p role="status" className="mt-5 text-xs leading-5 text-[var(--text-soft)]">{untracked ? "Playback saves automatically in this browser." : `${entry.watchedEpisodes} episodes watched · ${entry.status}. ${trackingMessage}`}</p>
             </section>
           </div>
         </div>

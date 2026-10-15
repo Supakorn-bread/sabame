@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createTrackerStore } from "./store";
+import { getTrackingStatus, getTrackedLibrary } from "./selectors";
 import type { MalLibraryResponse, MalListStatus } from "@/features/mal/types";
 
 const remote: MalListStatus = { status: "on_hold", num_episodes_watched: 2, score: 8, is_rewatching: false, updated_at: "2026-09-22T00:00:00Z" };
@@ -20,6 +21,62 @@ function setup() {
 }
 
 describe("MAL state boundaries", () => {
+  it("keeps local playback outside MAL membership across imports and account restoration", () => {
+    const { store, storage, version } = setup();
+    const anime = { ...snapshot.items[0].anime, id: "mal-101", title: "Unlisted" };
+    store.getState().registerAnime(anime);
+    store.getState().ensureEntry(anime.id);
+    store.getState().selectEpisode(anime.id, 4);
+    store.getState().setPlaybackPosition(anime.id, 230, 1440, 4);
+    expect(getTrackingStatus(store.getState(), anime.id)).toBe("untracked");
+    expect(Object.keys(getTrackedLibrary(store.getState()))).toEqual(["mal-100"]);
+    expect(store.getState().malSync.operations).toEqual([]);
+
+    store.getState().applyMalLibrary(version, { ...snapshot, items: [] });
+    expect(store.getState().library[anime.id]).toMatchObject({ currentEpisode: 4, playbackSeconds: 230, playbackDurationSeconds: 1440 });
+    expect(store.getState().catalog[anime.id].title).toBe("Unlisted");
+    expect(getTrackedLibrary(store.getState())).toEqual({});
+
+    const restored = createTrackerStore({ storage });
+    const restoredVersion = restored.getState().beginMalBootstrap();
+    restored.getState().activateMalAccount(restoredVersion, true, snapshot.user);
+    expect(restored.getState().library[anime.id]).toMatchObject({ currentEpisode: 4, playbackSeconds: 230 });
+    expect(getTrackedLibrary(restored.getState())).toEqual({});
+  });
+  it("projects unresolved intent before a confirmed remote record", () => {
+    const { store } = setup();
+    expect(getTrackingStatus(store.getState(), "mal-100")).toBe("confirmed");
+    store.getState().setStatus("mal-100", "watching");
+    expect(getTrackingStatus(store.getState(), "mal-100")).toBe("pending");
+    const operation = store.getState().malSync.operations[0];
+    store.getState().applyMalOperation(42, operation.id, { ...operation, state: "conflict", remote });
+    expect(getTrackingStatus(store.getState(), "mal-100")).toBe("conflict");
+    store.getState().markFailedMalOperation(42, operation.id, "Retry later");
+    expect(getTrackingStatus(store.getState(), "mal-100")).toBe("failed");
+  });
+  it("retains playback when choosing a remote removal and can explicitly add again", () => {
+    const { store } = setup();
+    store.getState().selectEpisode("mal-100", 5);
+    store.getState().setPlaybackPosition("mal-100", 321, 1440, 5);
+    store.getState().setStatus("mal-100", "watching");
+    const operation = store.getState().malSync.operations[0];
+    store.getState().applyMalOperation(42, operation.id, { ...operation, state: "synced", remote: null }, undefined, true);
+    expect(store.getState().library["mal-100"]).toMatchObject({ currentEpisode: 5, playbackSeconds: 321, playbackDurationSeconds: 1440 });
+    expect(getTrackingStatus(store.getState(), "mal-100")).toBe("untracked");
+    expect(getTrackedLibrary(store.getState())).toEqual({});
+    store.getState().setStatus("mal-100", "planned");
+    expect(getTrackingStatus(store.getState(), "mal-100")).toBe("pending");
+    expect(store.getState().malSync.operations.at(-1)).toMatchObject({ base: null, changes: { status: "planned" } });
+  });
+  it("drops noncanonical account playback during restore while preserving demo entries", () => {
+    const { store, storage } = setup();
+    const data = JSON.parse(storage.getItem()!);
+    data.state.malAccounts["42"].library["skyward-bloom"] = store.getState().demoLibrary["skyward-bloom"];
+    storage.setItem("sabame:v1", JSON.stringify(data));
+    const restored = createTrackerStore({ storage });
+    expect(restored.getState().malAccounts["42"].library["skyward-bloom"]).toBeUndefined();
+    expect(restored.getState().demoLibrary["skyward-bloom"].animeId).toBe("skyward-bloom");
+  });
   it("preserves imported status during playback and progress-only edits", () => {
     const { store } = setup();
     store.getState().selectEpisode("mal-100", 4);

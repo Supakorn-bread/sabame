@@ -4,6 +4,7 @@ import { ArrowUpRight, CalendarDays, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { AnimeArtwork } from "@/components/ui/anime-artwork";
 import { useTrackerStore } from "@/features/tracker/store";
+import { getTrackingStatus } from "@/features/tracker/selectors";
 import type { SeasonalAnime } from "@/features/seasonal/model";
 
 const formats: Record<string, string> = { tv: "TV", movie: "Movie", ona: "ONA", ova: "OVA", special: "Special", tv_special: "TV Special", music: "Music", unknown: "Anime" };
@@ -12,7 +13,7 @@ const dateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric
 
 export function SeasonalAnimeCard({ anime }: { anime: SeasonalAnime }) {
   const register = useTrackerStore((state) => state.registerAnime);
-  const inLibrary = useTrackerStore((state) => Boolean(state.library[anime.id]));
+  const inLibrary = useTrackerStore((state) => getTrackingStatus(state, anime.id) !== "untracked");
   const personalScore = useTrackerStore((state) => state.library[anime.id]?.personalScore);
   const href = `/watch/${anime.id}`;
   const episodeLabel = anime.totalEpisodes

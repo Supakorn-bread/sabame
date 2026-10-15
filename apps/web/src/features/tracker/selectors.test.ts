@@ -2,10 +2,36 @@
 
 import { describe, expect, it } from "vitest";
 
-import { createSeedLibrary } from "./seed";
-import { filterLibrary, getContinueWatching, getLibraryCounts, getRecentActivity } from "./selectors";
+import { createSeedLibrary, getAnimeById } from "./seed";
+import { filterLibrary, getContinueWatching, getLibraryCounts, getRecentActivity, getTrackedLibrary, getTrackingStatus } from "./selectors";
+import type { MalOperation } from "@/features/mal/types";
 
 describe("tracker selectors", () => {
+  it("keeps demo membership unchanged and excludes local account workspaces from counts and cards", () => {
+    const library = createSeedLibrary();
+    const state = { library, malUser: null, malSync: { status: "synced" as const, operations: [], conflicts: [], remote: {} } };
+    expect(getTrackedLibrary(state)).toBe(library);
+    const account = { ...state, malUser: { id: 42, name: "Viewer" } };
+    expect(getLibraryCounts(getTrackedLibrary(account)).all).toBe(0);
+    expect(filterLibrary(getTrackedLibrary(account), "all", "")).toEqual([]);
+    expect(getContinueWatching(getTrackedLibrary(account))).toEqual([]);
+  });
+  it("includes every unresolved tracking state and ignores a synced receipt without remote membership", () => {
+    const entries = Object.values(createSeedLibrary()).slice(0, 4);
+    const library = Object.fromEntries(entries.map((entry, index) => [`mal-${index + 1}`, { ...entry, animeId: `mal-${index + 1}` }]));
+    const catalog = Object.fromEntries(entries.map((entry, index) => [`mal-${index + 1}`, { ...getAnimeById(entry.animeId)!, id: `mal-${index + 1}` }]));
+    const operations: MalOperation[] = [
+      { id: "pending", animeId: "mal-1", state: "pending", changes: { status: "watching" }, base: null },
+      { id: "conflict", animeId: "mal-2", state: "conflict", changes: { status: "watching" }, base: null },
+      { id: "failed", animeId: "mal-3", state: "failed", changes: { status: "watching" }, base: null },
+      { id: "synced", animeId: "mal-4", state: "synced", changes: { status: "completed" }, base: null },
+    ];
+    const state = { library, malUser: { id: 42, name: "Viewer" }, malSync: { status: "synced" as const, operations, conflicts: [], remote: {} } };
+    expect(Object.keys(getTrackedLibrary(state))).toEqual(["mal-1", "mal-2", "mal-3"]);
+    expect(getTrackingStatus(state, "mal-4")).toBe("untracked");
+    expect(getLibraryCounts(getTrackedLibrary(state), catalog)).toEqual({ all: 3, watching: 3, planned: 0, completed: 0, on_hold: 0, dropped: 0 });
+  });
+
   it("orders continue-watching titles by latest activity", () => {
     const results = getContinueWatching(createSeedLibrary());
 

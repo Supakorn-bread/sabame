@@ -1,5 +1,23 @@
 import { ANIME_CATALOG, getAnimeById } from "./seed";
 import type { Anime, LibraryEntry, LibraryStatus } from "./types";
+import type { TrackerStore } from "./store";
+
+export type TrackingStatus = "untracked" | "confirmed" | "pending" | "conflict" | "failed";
+type TrackingState = Pick<TrackerStore, "library" | "malUser"> & {
+  malSync: Pick<TrackerStore["malSync"], "operations" | "remote">;
+};
+
+export function getTrackingStatus(state: TrackingState, animeId: string): TrackingStatus {
+  if (!state.malUser) return state.library[animeId] ? "confirmed" : "untracked";
+  const unresolved = state.malSync.operations.find((operation) => operation.animeId === animeId && operation.state !== "synced");
+  if (unresolved && unresolved.state !== "synced") return unresolved.state;
+  return state.malSync.remote[animeId] ? "confirmed" : "untracked";
+}
+
+export function getTrackedLibrary(state: TrackingState): Record<string, LibraryEntry> {
+  if (!state.malUser) return state.library;
+  return Object.fromEntries(Object.entries(state.library).filter(([id]) => getTrackingStatus(state, id) !== "untracked"));
+}
 
 export interface TrackedAnime {
   anime: Anime;

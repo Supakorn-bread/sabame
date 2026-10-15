@@ -2,11 +2,11 @@
 
 import { Search, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { LibraryAnimeCard, libraryStatusLabels } from "@/components/library-anime-card";
 import { AppShell } from "@/components/layout/app-shell";
-import { filterLibrary, type LibraryFilter } from "@/features/tracker/selectors";
+import { filterLibrary, getTrackedLibrary, type LibraryFilter } from "@/features/tracker/selectors";
 import { useTrackerStore } from "@/features/tracker/store";
 import type { LibraryStatus } from "@/features/tracker/types";
 
@@ -24,7 +24,10 @@ export default function LibraryPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("title");
   const [feedback, setFeedback] = useState("");
-  const library = useTrackerStore((state) => state.library);
+  const workspace = useTrackerStore((state) => state.library);
+  const malUser = useTrackerStore((state) => state.malUser);
+  const malSync = useTrackerStore((state) => state.malSync);
+  const library = useMemo(() => getTrackedLibrary({ library: workspace, malUser, malSync }), [workspace, malUser, malSync]);
   const setStatus = useTrackerStore((state) => state.setStatus);
   const setWatchedEpisodes = useTrackerStore((state) => state.setWatchedEpisodes);
   const catalog = useTrackerStore((state) => state.catalog);

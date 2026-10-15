@@ -347,8 +347,8 @@ export function createTrackerStore(options: CreateTrackerStoreOptions = {}): Sto
               (expectedRevision !== undefined && state.malRevision !== expectedRevision)) return false;
             const key = String(response.user.id);
             const previous = state.malAccounts[key] ?? emptyAccount();
-            const library: Record<string, LibraryEntry> = {};
-            const catalog: Record<string, Anime> = {};
+            const library = { ...previous.library };
+            const catalog = { ...previous.catalog };
             const remote: Record<string, MalListStatus | null> = {};
             for (const item of response.items) {
               if (!MAL_ANIME_ID.test(item.anime.id)) continue;
@@ -431,10 +431,8 @@ export function createTrackerStore(options: CreateTrackerStoreOptions = {}): Sto
             const library = { ...state.library };
             const catalog = { ...state.catalog };
             const remote = { ...account.remote };
-            if (removed && !hasLaterLocalChange) {
-              delete library[operation.animeId];
-              delete remote[operation.animeId];
-            } else if (item) {
+            if (removed) remote[operation.animeId] = null;
+            else if (item) {
               const anime = savedAnime(item.anime);
               if (anime) catalog[anime.id] = anime;
               remote[operation.animeId] = item.remote;

@@ -153,7 +153,7 @@ function restoreMalAccounts(value: unknown) {
       }
     }
     accounts[key] = {
-      library: restoreLibrary(account.library),
+      library: Object.fromEntries(Object.entries(restoreLibrary(account.library)).filter(([id]) => /^mal-[1-9]\d*$/.test(id))),
       catalog: restoreCatalog(account.catalog),
       operations: Array.isArray(account.operations) ? account.operations.flatMap((operation) => {
         const saved = savedOperation(operation);

@@ -2,13 +2,14 @@
 
 import { History, Library, Search, Star, Users } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { CurrentlyWatching } from "@/components/currently-watching";
 import { AnimeArtwork } from "@/components/ui/anime-artwork";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
-import { getContinueWatching } from "@/features/tracker/selectors";
+import { getContinueWatching, getTrackedLibrary } from "@/features/tracker/selectors";
 import { useTrackerStore } from "@/features/tracker/store";
 
 function overallProgress(watched: number, total: number | null) {
@@ -22,9 +23,11 @@ const friendActivity = [
 ];
 
 export default function DashboardPage() {
-  const library = useTrackerStore((state) => state.library);
+  const workspace = useTrackerStore((state) => state.library);
   const catalog = useTrackerStore((state) => state.catalog);
   const malUser = useTrackerStore((state) => state.malUser);
+  const malSync = useTrackerStore((state) => state.malSync);
+  const library = useMemo(() => getTrackedLibrary({ library: workspace, malUser, malSync }), [workspace, malUser, malSync]);
   const syncStatus = useTrackerStore((state) => state.malSync.status);
   const watching = getContinueWatching(library, catalog);
   const featured = watching[0];

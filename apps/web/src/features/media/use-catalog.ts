@@ -41,9 +41,12 @@ export function useCatalogAnime(animeId: string) {
   const seed = getAnimeById(animeId);
   const saved = useTrackerStore((state) => state.catalog[animeId]);
   const register = useTrackerStore((state) => state.registerAnime);
+  const authReady = useTrackerStore((state) => state.authReady);
+  const sessionVersion = useTrackerStore((state) => state.malSessionVersion);
   const [artwork, setArtwork] = useState<{ id: string; coverUrl: string } | null>(null);
   const [failure, setFailure] = useState("");
   useEffect(() => {
+    if (!seed && !authReady) return;
     const controller = new AbortController();
     fetch(`/api/anime/${encodeURIComponent(animeId)}`, { signal: controller.signal }).then(async (response) => {
       if (!response.ok) throw new Error("catalog_unavailable");
@@ -56,7 +59,7 @@ export function useCatalogAnime(animeId: string) {
       }
     }).catch(() => { if (!controller.signal.aborted) setFailure(animeId); });
     return () => controller.abort();
-  }, [animeId, seed, register, router]);
+  }, [animeId, authReady, seed, register, router, sessionVersion]);
   const anime = seed && artwork?.id === animeId ? { ...seed, coverUrl: artwork.coverUrl, heroUrl: undefined } : seed ?? saved;
   return { anime, error: failure === animeId };
 }
