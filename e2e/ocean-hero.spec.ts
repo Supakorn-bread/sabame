@@ -256,33 +256,35 @@ test("mobile copy stays readable above the water scene at 320px and 200% text si
   await page.setViewportSize({ width: 320, height: 740 });
   await page.locator("html").evaluate((element) => { element.style.fontSize = "200%"; });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const zoomLayout = await page.evaluate(() => {
-    const hero = document.querySelector<HTMLElement>("#home-hero")!;
-    const content = document.querySelector<HTMLElement>(".ocean-hero__content")!;
-    const heroRect = hero.getBoundingClientRect();
-    const contentRect = content.getBoundingClientRect();
-    const waterlineMarker = hero.querySelector<HTMLElement>("[data-testid=ocean-waterline-marker]")!;
-    const waterline = waterlineMarker.getBoundingClientRect().top - heroRect.top;
-    const cards = Array.from(hero.querySelectorAll<HTMLElement>("[data-testid=ocean-card]"))
-      .filter((card) => getComputedStyle(card).display !== "none")
-      .map((card) => {
-        const rect = card.getBoundingClientRect();
-        return {
-          left: rect.left - heroRect.left,
-          right: rect.right - heroRect.left,
-          top: rect.top - heroRect.top,
-          bottom: rect.bottom - heroRect.top,
-        };
-      });
-    return { contentBottom: contentRect.bottom - heroRect.top, waterline, heroHeight: heroRect.height, cards };
-  });
-  expect(zoomLayout.contentBottom).toBeLessThan(zoomLayout.waterline - 12);
-  for (const card of zoomLayout.cards) {
-    expect(card.top).toBeGreaterThan(zoomLayout.contentBottom);
-    expect(card.bottom).toBeLessThanOrEqual(zoomLayout.heroHeight);
-    expect(card.left).toBeGreaterThanOrEqual(0);
-    expect(card.right).toBeLessThanOrEqual(320);
-  }
+  await expect(async () => {
+    const zoomLayout = await page.evaluate(() => {
+      const hero = document.querySelector<HTMLElement>("#home-hero")!;
+      const content = document.querySelector<HTMLElement>(".ocean-hero__content")!;
+      const heroRect = hero.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const waterlineMarker = hero.querySelector<HTMLElement>("[data-testid=ocean-waterline-marker]")!;
+      const waterline = waterlineMarker.getBoundingClientRect().top - heroRect.top;
+      const cards = Array.from(hero.querySelectorAll<HTMLElement>("[data-testid=ocean-card]"))
+        .filter((card) => getComputedStyle(card).display !== "none")
+        .map((card) => {
+          const rect = card.getBoundingClientRect();
+          return {
+            left: rect.left - heroRect.left,
+            right: rect.right - heroRect.left,
+            top: rect.top - heroRect.top,
+            bottom: rect.bottom - heroRect.top,
+          };
+        });
+      return { contentBottom: contentRect.bottom - heroRect.top, waterline, heroHeight: heroRect.height, cards };
+    });
+    expect(zoomLayout.contentBottom).toBeLessThan(zoomLayout.waterline - 12);
+    for (const card of zoomLayout.cards) {
+      expect(card.top).toBeGreaterThan(zoomLayout.contentBottom);
+      expect(card.bottom).toBeLessThanOrEqual(zoomLayout.heroHeight);
+      expect(card.left).toBeGreaterThanOrEqual(0);
+      expect(card.right).toBeLessThanOrEqual(320);
+    }
+  }).toPass({ timeout: 5000 });
   await page.screenshot({ path: "test-results/ocean-mobile-zoom.png", fullPage: true });
 
   await page.mouse.move(160, 600);
