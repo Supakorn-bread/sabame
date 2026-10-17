@@ -7,6 +7,8 @@ interface Props {
   animeId: string; title: string; episode: number; initialPosition: number; imageUrl?: string; providerLoading?: boolean;
   onPositionChange: (seconds: number, duration: number) => void; onComplete: () => void;
 }
+interface QualityLevel { index: number; label: string }
+type QualityMode = "automatic" | "source";
 const messages: Record<string, string> = {
   metadata_unavailable: "Anime details are temporarily unavailable. Please retry shortly.",
   upstream_unavailable: "The video provider is temporarily unavailable. Please retry shortly.",
@@ -32,6 +34,10 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
   const [needsPlay, setNeedsPlay] = useState(false);
   const [subtitle, setSubtitle] = useState("off");
   const [failedTracks, setFailedTracks] = useState<number[]>([]);
+  const [qualityLevels, setQualityLevels] = useState<QualityLevel[]>([]);
+  const [qualityMode, setQualityMode] = useState<QualityMode>("source");
+  const [qualitySelection, setQualitySelection] = useState(-1);
+  const applyHlsQuality = useRef<((level: number) => void) | null>(null);
   useEffect(() => { report.current = onPositionChange; }, [onPositionChange]);
   const flush = useCallback((force = false) => {
     const element = video.current;
@@ -48,6 +54,7 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
   }, [animeId, episode, flush, mediaMatchesEpisode, onComplete]);
   useEffect(() => () => pending.current?.abort(), []);
   useEffect(() => {
+    applyHlsQuality.current = null;
     if (!media) return;
     const element = video.current;
     if (!element) return;
@@ -58,13 +65,43 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
       track.addEventListener("error", fail);
       return () => track.removeEventListener("error", fail);
     });
-    if (media.video.type === "hls" && !element.canPlayType("application/vnd.apple.mpegurl")) {
+    if (media.video.type === "hls") {
       void import("hls.js").then(({ default: Hls }) => {
         if (disposed) return;
-        if (!Hls.isSupported()) { setError("This browser cannot play HLS video."); return; }
+        if (!Hls.isSupported()) {
+          if (element.canPlayType("application/vnd.apple.mpegurl")) element.src = media.video.url;
+          else setError("This browser cannot play HLS video.");
+          return;
+        }
         const hls = new Hls();
-        destroy = () => hls.destroy();
-        hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal && !disposed) setError("Playback failed. Request a fresh source to retry."); });
+        const applyQuality = (level: number) => { hls.nextLevel = level; };
+        const updateQualityLevels = () => {
+          const heightCounts = new Map<number, number>();
+          for (const level of hls.levels) {
+            if (level.height > 0) heightCounts.set(level.height, (heightCounts.get(level.height) ?? 0) + 1);
+          }
+          setQualityLevels(hls.levels.map(({ height }, index) => ({
+            index,
+            label: height > 0
+              ? `${height}p${(heightCounts.get(height) ?? 0) > 1 ? ` (Level ${index + 1})` : ""}`
+              : `Unknown resolution (Level ${index + 1})`,
+          })));
+        };
+        const handleHlsError = (_: typeof Hls.Events.ERROR, data: { fatal: boolean }) => {
+          if (data.fatal && !disposed) setError("Playback failed. Request a fresh source to retry.");
+        };
+        hls.on(Hls.Events.MANIFEST_PARSED, updateQualityLevels);
+        hls.on(Hls.Events.LEVELS_UPDATED, updateQualityLevels);
+        hls.on(Hls.Events.ERROR, handleHlsError);
+        applyHlsQuality.current = applyQuality;
+        setQualityMode("automatic");
+        destroy = () => {
+          hls.off(Hls.Events.MANIFEST_PARSED, updateQualityLevels);
+          hls.off(Hls.Events.LEVELS_UPDATED, updateQualityLevels);
+          hls.off(Hls.Events.ERROR, handleHlsError);
+          if (applyHlsQuality.current === applyQuality) applyHlsQuality.current = null;
+          hls.destroy();
+        };
         hls.loadSource(media.video.url); hls.attachMedia(element);
       }).catch(() => { if (!disposed) setError("The video player could not load. Please retry."); });
     } else element.src = media.video.url;
@@ -85,6 +122,7 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
     pending.current?.abort();
     const controller = new AbortController(); pending.current = controller;
     setMedia(null); setError(""); setLoading(true); setFailedTracks([]); setNeedsPlay(false);
+    setQualityLevels([]); setQualityMode("source"); setQualitySelection(-1); applyHlsQuality.current = null;
     try {
       const response = await fetch(`/api/anime/${encodeURIComponent(animeId)}/media`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ episodeNumber: episode }), signal: controller.signal });
       const data = await response.json();
@@ -126,6 +164,13 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
       {error && <p role="alert">{error}</p>}
       {needsPlay && <button type="button" onClick={() => void video.current?.play().catch(() => setError("Playback could not start. Use the video controls to retry."))} className="rounded border px-4 py-2">Play video</button>}
       {media && <>
+        {qualityMode === "automatic" && qualityLevels.length > 0
+          ? <label className="flex flex-wrap items-center gap-3">Quality<select aria-label="Video quality" className="rounded border bg-[var(--bg)] p-2" value={String(qualitySelection)} onChange={(event) => {
+            const level = Number(event.target.value);
+            setQualitySelection(level);
+            applyHlsQuality.current?.(level);
+          }}><option value={-1}>Auto</option>{qualityLevels.map(({ index, label }) => <option key={index} value={index}>{label}</option>)}</select></label>
+          : <p className="text-[var(--text-soft)]">{qualityMode === "automatic" ? "Quality: Automatic" : "Quality is controlled by the source."}</p>}
         <label className="flex flex-wrap items-center gap-3">Subtitles<select aria-label="Subtitles" className="rounded border bg-[var(--bg)] p-2" value={subtitle} onChange={(event) => setSubtitle(event.target.value)}><option value="off">Off</option>{tracks.map((track, index) => <option key={index} value={index} disabled={failedTracks.includes(index)}>{track.label}{failedTracks.includes(index) ? " (unavailable)" : ""}</option>)}</select></label>
         <p role="status" className="text-[var(--text-soft)]">{media.thaiStatus === "present" ? "Thai track returned for this episode. Timing is unverified." : media.thaiStatus === "absent_in_returned_tracks" ? "No Thai subtitle in the returned tracks." : media.thaiStatus === "unavailable" ? "A Thai track was returned but its URL is unavailable." : "Thai subtitle availability is unknown."} {media.subtitles.some((track) => track.format === "ass") && "ASS tracks are not supported by this player yet."} {failedTracks.length > 0 && "A subtitle failed to load; select another track or retry."}</p>
         <p className="text-xs text-[var(--text-soft)]">Subtitle timing has not been verified against this video.</p>

@@ -4,11 +4,43 @@ import { MediaPlayer } from "./media-player";
 import { createTrackerStore } from "@/features/tracker/store";
 import type { MediaResult } from "@/features/media/types";
 
+const hlsHarness = vi.hoisted(() => ({
+  events: { MANIFEST_PARSED: "manifestParsed", LEVELS_UPDATED: "levelsUpdated", ERROR: "error" },
+  isSupported: vi.fn(() => true),
+  instances: [] as Array<{
+    levels: Array<{ height: number }>;
+    nextLevel: number;
+    listeners: Map<string, (event: string, data: { fatal?: boolean }) => void>;
+    off: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
+    attachMedia: ReturnType<typeof vi.fn>;
+    loadSource: ReturnType<typeof vi.fn>;
+  }>,
+}));
+vi.mock("hls.js", () => {
+  class HlsMock {
+    static Events = hlsHarness.events;
+    static isSupported = hlsHarness.isSupported;
+    levels: Array<{ height: number }> = [];
+    nextLevel = -1;
+    listeners = new Map<string, (event: string, data: { fatal?: boolean }) => void>();
+    off = vi.fn((event: string) => { this.listeners.delete(event); });
+    destroy = vi.fn();
+    attachMedia = vi.fn();
+    loadSource = vi.fn();
+    constructor() { hlsHarness.instances.push(this); }
+    on(event: string, listener: (event: string, data: { fatal?: boolean }) => void) { this.listeners.set(event, listener); }
+  }
+  return { default: HlsMock };
+});
+
 const result: MediaResult = { provider: "fixture", video: { url: "/fixture.mp4", type: "mp4" },
   metadata: { animeId: "mal-1", episodeNumber: 1 }, thaiStatus: "present", selectionReason: "thai_subtitle",
   subtitles: [{ language: "th", label: "Thai", url: "/thai.vtt", format: "vtt", default: true, availability: "available", displaySupported: true, syncStatus: "unverified" }] };
 const props = () => ({ animeId: "mal-1", title: "Test anime", episode: 1, initialPosition: 10, onPositionChange: vi.fn(), onComplete: vi.fn() });
 beforeEach(() => {
+  hlsHarness.instances.length = 0;
+  hlsHarness.isSupported.mockReturnValue(true);
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => {});
@@ -73,6 +105,115 @@ describe("real media player", () => {
     expect(tracks[0]).not.toHaveAttribute("default");
     expect(tracks[1]).toHaveAttribute("default");
     expect(container.querySelector("video")?.getAttribute("src")).toBe(englishResult.video.url);
+  });
+  it("uses HLS.js levels when supported and changes quality without replacing or seeking the video", async () => {
+    const hlsResult: MediaResult = { ...result, video: { url: "/master.m3u8", type: "hls" } };
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => hlsResult } as Response);
+    vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue("maybe");
+    const callbacks = props();
+    const { container } = render(<MediaPlayer {...callbacks} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(hlsHarness.instances).toHaveLength(1));
+    const hls = hlsHarness.instances[0];
+    const video = container.querySelector("video")!;
+    await waitFor(() => expect(hls.attachMedia).toHaveBeenCalledWith(video));
+    hls.levels = [{ height: 1080 }, { height: 720 }, { height: 720 }];
+    act(() => hls.listeners.get(hlsHarness.events.MANIFEST_PARSED)?.(hlsHarness.events.MANIFEST_PARSED, {}));
+
+    const quality = await screen.findByRole("combobox", { name: "Video quality" });
+    expect(quality).toHaveValue("-1");
+    expect(Array.from(quality.querySelectorAll("option")).map(({ value, textContent }) => [value, textContent])).toEqual([
+      ["-1", "Auto"], ["0", "1080p"], ["1", "720p (Level 2)"], ["2", "720p (Level 3)"],
+    ]);
+
+    Object.defineProperty(video, "duration", { configurable: true, value: 100 });
+    fireEvent.loadedMetadata(video);
+    video.currentTime = 37;
+    const playCalls = vi.mocked(HTMLMediaElement.prototype.play).mock.calls.length;
+    fireEvent.change(quality, { target: { value: "2" } });
+    expect(quality).toHaveValue("2");
+    expect(hls.nextLevel).toBe(2);
+    expect(container.querySelector("video")).toBe(video);
+    expect(video.currentTime).toBe(37);
+    expect(vi.mocked(HTMLMediaElement.prototype.play)).toHaveBeenCalledTimes(playCalls);
+    expect(callbacks.onComplete).not.toHaveBeenCalled();
+
+    fireEvent.change(quality, { target: { value: "-1" } });
+    expect(quality).toHaveValue("-1");
+    expect(hls.nextLevel).toBe(-1);
+  });
+  it("cleans HLS listeners and resets to Auto when requesting a fresh source", async () => {
+    const hlsResult: MediaResult = { ...result, video: { url: "/master.m3u8", type: "hls" } };
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => hlsResult } as Response);
+    const { container } = render(<MediaPlayer {...props()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(hlsHarness.instances).toHaveLength(1));
+    const firstHls = hlsHarness.instances[0];
+    firstHls.levels = [{ height: 1080 }, { height: 720 }];
+    act(() => firstHls.listeners.get(hlsHarness.events.MANIFEST_PARSED)?.(hlsHarness.events.MANIFEST_PARSED, {}));
+    const firstQuality = await screen.findByRole("combobox", { name: "Video quality" });
+    fireEvent.change(firstQuality, { target: { value: "1" } });
+    expect(firstHls.nextLevel).toBe(1);
+
+    let finishRefresh!: (response: Response) => void;
+    vi.mocked(fetch).mockReturnValueOnce(new Promise((resolve) => { finishRefresh = resolve; }));
+    fireEvent.click(screen.getByRole("button", { name: "Request fresh source" }));
+    await waitFor(() => expect(firstHls.destroy).toHaveBeenCalledOnce());
+    expect(firstHls.listeners.size).toBe(0);
+    expect(firstHls.off).toHaveBeenCalledTimes(3);
+
+    await act(async () => finishRefresh({ ok: true, json: async () => hlsResult } as Response));
+    await waitFor(() => expect(hlsHarness.instances).toHaveLength(2));
+    const refreshedHls = hlsHarness.instances[1];
+    refreshedHls.levels = [{ height: 1080 }, { height: 720 }];
+    act(() => refreshedHls.listeners.get(hlsHarness.events.MANIFEST_PARSED)?.(hlsHarness.events.MANIFEST_PARSED, {}));
+    expect(await screen.findByRole("combobox", { name: "Video quality" })).toHaveValue("-1");
+    expect(container.querySelector("video")).toBeInTheDocument();
+  });
+  it("starts a keyed episode with Auto and disposes the previous HLS instance", async () => {
+    const hlsResult: MediaResult = { ...result, video: { url: "/master.m3u8", type: "hls" } };
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => hlsResult } as Response);
+    const callbacks = props();
+    const { rerender } = render(<MediaPlayer key="1" {...callbacks} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(hlsHarness.instances).toHaveLength(1));
+    const firstHls = hlsHarness.instances[0];
+    firstHls.levels = [{ height: 1080 }, { height: 720 }];
+    act(() => firstHls.listeners.get(hlsHarness.events.MANIFEST_PARSED)?.(hlsHarness.events.MANIFEST_PARSED, {}));
+    fireEvent.change(await screen.findByRole("combobox", { name: "Video quality" }), { target: { value: "1" } });
+    expect(firstHls.nextLevel).toBe(1);
+
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => hlsResult } as Response);
+    rerender(<MediaPlayer key="2" {...callbacks} episode={2} />);
+    await waitFor(() => expect(firstHls.destroy).toHaveBeenCalledOnce());
+    expect(firstHls.listeners.size).toBe(0);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(hlsHarness.instances).toHaveLength(2));
+    const secondHls = hlsHarness.instances[1];
+    secondHls.levels = [{ height: 1080 }, { height: 720 }];
+    act(() => secondHls.listeners.get(hlsHarness.events.MANIFEST_PARSED)?.(hlsHarness.events.MANIFEST_PARSED, {}));
+    expect(await screen.findByRole("combobox", { name: "Video quality" })).toHaveValue("-1");
+    expect(vi.mocked(fetch).mock.calls[1][1]?.body).toBe(JSON.stringify({ episodeNumber: 2 }));
+  });
+  it.each([
+    ["MP4", "mp4", true],
+    ["native HLS fallback", "hls", false],
+  ] as const)("shows source-controlled quality for %s without invented resolutions", async (_name, type, hlsSupported) => {
+    const source: MediaResult = { ...result, video: { url: type === "hls" ? "/native.m3u8" : "/source.mp4", type } };
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => source } as Response);
+    if (!hlsSupported) {
+      hlsHarness.isSupported.mockReturnValue(false);
+      vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue("maybe");
+    }
+    render(<MediaPlayer {...props()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    expect(await screen.findByText("Quality is controlled by the source.")).toBeVisible();
+    expect(screen.queryByRole("combobox", { name: "Video quality" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /\d+p/ })).not.toBeInTheDocument();
+    if (type === "hls") {
+      expect(hlsHarness.instances).toHaveLength(0);
+      expect(HTMLMediaElement.prototype.canPlayType).toHaveBeenCalledWith("application/vnd.apple.mpegurl");
+    }
   });
   it("completes once when playback ends", async () => {
     const callbacks = props(); const { container } = render(<MediaPlayer {...callbacks} />);
