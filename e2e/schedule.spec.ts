@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test.use({ timezoneId: "Asia/Bangkok" });
+test.use({ timezoneId: "Asia/Bangkok", launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 
 const viewports = [
   { name: "desktop", width: 1280, height: 900, rows: [] },
@@ -188,9 +188,9 @@ test("calendar groups exact minutes and keeps portal details within the viewport
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.clock.setFixedTime(new Date("2026-09-23T05:00:00Z"));
   await page.emulateMedia({ reducedMotion: "reduce" });
-  const base = { route: "comet", imageVersionRoute: null, delayedUntil: null, delayedText: null, episodeNumber: 4, subtractedEpisodeNumber: null, status: "Upcoming", airingStatus: "upcoming", airType: "Raw" };
+  const base = { route: "comet", imageVersionRoute: null, delayedUntil: null as string | null, delayedText: null as string | null, episodeNumber: 4, subtractedEpisodeNumber: null, status: "Upcoming", airingStatus: "upcoming", airType: "Raw" };
   const items = [1, 2, 3, 4].flatMap((count, day) => Array.from({ length: count }, (_, index) => ({ ...base, id: `${count}-${index}`, title: `Group ${count} Anime ${index}`, episodeDate: `2026-09-${23 + day}T05:00:00Z` })));
-  items.push({ ...base, id: "last", title: "Sunday Edge", episodeDate: "2026-09-27T05:01:00Z" });
+  items.push({ ...base, id: "last", title: "Sunday Edge", episodeDate: "2026-09-27T05:01:00Z", status: "Delayed", delayedUntil: "2026-09-27T05:01:00Z", delayedText: "A replacement broadcast time is being confirmed. ".repeat(20) });
   await page.route("**/api/schedule?*", (route) => route.fulfill({ json: { state: "ready", season: { year: 2026, season: "summer" }, matchedAnimeCount: 11, items } }));
   await page.goto("/login");
   await page.getByRole("button", { name: "Try demo instantly" }).click();
@@ -232,9 +232,20 @@ test("calendar groups exact minutes and keeps portal details within the viewport
   expect([after!.x, after!.width, after!.height]).toEqual([before!.x, before!.width, before!.height]);
   const cover = await dialog.getByRole("button", { name: "Sunday Edge cover" }).boundingBox();
   const heading = await dialog.getByRole("heading").boundingBox();
+  await expect(dialog).toHaveAttribute("data-direction", "left");
+  const information = dialog.getByRole("region", { name: "Sunday Edge broadcast information" });
+  const informationBounds = await information.boundingBox();
+  expect(informationBounds!.x + informationBounds!.width).toBeLessThanOrEqual(cover!.x + 1);
+  expect(bounds!.height).toBeCloseTo(cover!.height, 0);
+  expect(await information.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
   await page.mouse.move(cover!.x + cover!.width / 2, cover!.y + cover!.height / 2);
   await page.mouse.move(heading!.x + heading!.width / 2, heading!.y + heading!.height / 2, { steps: 8 });
   await expect(dialog).toBeVisible();
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 1000);
+  await expect.poll(() => information.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+  expect((await dialog.boundingBox())!.height).toBeCloseTo(cover!.height, 0);
   expect((await new AxeBuilder({ page }).include("#main-content").include("[data-schedule-overlay]").analyze()).violations).toEqual([]);
   await page.mouse.move(1, 1);
   await expect(dialog).toHaveCount(0);
@@ -281,4 +292,52 @@ test("loading placeholders match Week and Day layouts and dropdown arrows have s
   await expect(panel).toHaveAttribute("aria-busy", "false");
   await expect(day).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "No broadcasts listed for this day" })).toBeVisible();
+});
+
+test("right-edge cover stays anchored through rapid hover reversals", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.clock.setFixedTime(new Date("2026-09-23T05:00:00Z"));
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const item = { id: "edge", title: "Edge broadcast", route: "edge", imageVersionRoute: null, episodeDate: "2026-09-27T05:00:00Z", delayedUntil: null, delayedText: null, episodeNumber: 4, subtractedEpisodeNumber: null, status: "Upcoming", airingStatus: "upcoming", airType: "Raw" };
+  await page.route("**/api/schedule?*", (route) => route.fulfill({ json: { state: "ready", season: { year: 2026, season: "summer" }, matchedAnimeCount: 1, items: [item] } }));
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Try demo instantly" }).click();
+  await page.goto("/schedule");
+  const trigger = page.getByRole("button", { name: "Show details for Edge broadcast" });
+  await trigger.scrollIntoViewIfNeeded();
+  await trigger.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    window.scrollBy({ top: bounds.bottom - (window.innerHeight - 4), behavior: "instant" });
+  });
+  const anchor = (await trigger.boundingBox())!;
+  const measurements = page.evaluate(async () => {
+    const samples: { x: number; y: number; right: number }[] = [];
+    const trigger = document.querySelector<HTMLElement>('[aria-label="Show details for Edge broadcast"]')!;
+    let blankFrames = 0;
+    const end = performance.now() + 2000;
+    while (performance.now() < end) {
+      const root = document.querySelector("[data-schedule-overlay=detail]");
+      const cover = root?.querySelector("button");
+      if (getComputedStyle(trigger).visibility === "hidden" && !cover) blankFrames += 1;
+      if (root && cover) samples.push({ x: cover.getBoundingClientRect().x, y: cover.getBoundingClientRect().y, right: root.getBoundingClientRect().right });
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    return { samples, blankFrames };
+  });
+  for (const delay of [20, 35, 60, 90, 40, 15, 120, 50]) {
+    await page.mouse.move(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2);
+    await page.waitForTimeout(delay);
+    await page.mouse.move(anchor.x + anchor.width + 20, anchor.y + anchor.height / 2);
+    await page.waitForTimeout(delay);
+  }
+  await page.mouse.move(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2);
+  await expect(page.getByRole("dialog")).toHaveAttribute("data-phase", "open");
+  const { samples, blankFrames } = await measurements;
+  expect(blankFrames).toBe(0);
+  expect(samples.length).toBeGreaterThan(10);
+  expect(Math.max(...samples.map((sample) => Math.abs(sample.x - anchor.x)))).toBeLessThan(1);
+  expect(Math.max(...samples.map((sample) => Math.abs(sample.y - anchor.y)))).toBeLessThan(1);
+  expect(Math.max(...samples.map((sample) => sample.right))).toBeLessThanOrEqual(1280);
+  await page.mouse.move(1, 1);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });

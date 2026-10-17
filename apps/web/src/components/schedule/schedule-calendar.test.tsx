@@ -113,6 +113,20 @@ describe("ScheduleCalendar", () => {
     fireEvent.pointerOver(dialog, { pointerType: "mouse", relatedTarget: document.body });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
+  it("does not reopen under a stationary pointer after Escape", async () => {
+    const user = userEvent.setup();
+    render(calendar([anime]));
+    const trigger = screen.getByRole("button", { name: "Show details for Comet A" });
+    await user.click(trigger);
+    await screen.findByRole("dialog");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    fireEvent.pointerOver(trigger, { pointerType: "mouse" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.pointerOut(trigger, { pointerType: "mouse", clientX: -10, clientY: -10, relatedTarget: document.body });
+    fireEvent.pointerOver(trigger, { pointerType: "mouse" });
+    await screen.findByRole("dialog");
+  });
   it("renders seven day headers and only occupied exact-minute rows with cover-only cells", () => {
     render(calendar([anime, { ...anime, id: "b", title: "Comet B", episodeDate: "2026-09-24T05:01:00Z" }]));
     const table = screen.getByRole("table", { name: "Weekly broadcast calendar" });

@@ -16,7 +16,7 @@ type OpenOverlay = { group: CalendarGroup; anchor: HTMLButtonElement; activation
   | { kind: "detail"; selectedIndex: number; selection: Activation; origin?: CoverOrigin }
 );
 type OverlayState = { kind: "closed" } | OpenOverlay;
-type Placement = { left: number; top: number; coverWidth: number; coverHeight: number; detailWidth: number; originOffset: number; carouselCoverWidth: number };
+type Placement = { direction: "left" | "right"; left: number; top: number; coverWidth: number; coverHeight: number; detailWidth: number; carouselCoverWidth: number };
 
 function isHoverPointer(event: ReactPointerEvent) {
   return event.pointerType === "mouse" || event.pointerType === "pen" && event.buttons === 0;
@@ -43,7 +43,7 @@ function Details({ anime, timeZone, focusTarget }: { anime: ScheduleAnime; timeZ
     : anime.subtractedEpisodeNumber !== null && anime.subtractedEpisodeNumber < anime.episodeNumber
       ? `Episodes ${anime.subtractedEpisodeNumber}-${anime.episodeNumber}` : `Episode ${anime.episodeNumber}`;
   const status = isDelayed(anime) ? "Delayed" : (anime.airingStatus ?? anime.status ?? "Scheduled").replaceAll("_", " ");
-  return <div className={styles.detailInner}>
+  return <div className={styles.detailInner} role="region" aria-label={`${anime.title} broadcast information`} tabIndex={0}>
     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs"><span className="rounded bg-[var(--primary-soft)] px-2 py-1 font-bold text-[var(--primary)]">RAW</span><span className="text-[var(--text-soft)]">{status}</span></div>
     <h3 className="break-words text-lg font-extrabold leading-snug">{anime.title}</h3>
     <p className="mt-2 text-sm text-[var(--text-soft)]">{episode}</p>
@@ -68,38 +68,38 @@ function CalendarOverlay({ state, timeZone, onChange, onClosed }: { state: OpenO
   useLayoutEffect(() => {
     let frame = 0;
     function measure() {
-      frame = requestAnimationFrame(() => {
-        const rect = anchor.getBoundingClientRect();
-        const gutter = 12;
-        const coverWidth = origin?.width || rect.width || 144;
-        const coverHeight = origin?.height || rect.height || 201.6;
-        const originLeft = rect.left + (origin?.left ?? 0);
-        const originTop = rect.top + (origin?.top ?? 0);
-        const detailWidth = Math.min(320, window.innerWidth - gutter * 2 - coverWidth);
-        const carouselItemCount = Math.min(3, state.group.items.length);
-        const carouselOverhead = 114 + (carouselItemCount + 1) * 10;
-        const carouselWidth = Math.min(carouselItemCount * 144 + carouselOverhead, window.innerWidth - gutter * 2);
-        const carouselCoverWidth = Math.min(144, (carouselWidth - carouselOverhead) / carouselItemCount);
-        const width = isDetail ? coverWidth + detailWidth : carouselWidth;
-        const carouselOriginIndex = carouselItemCount >= 3 ? 1 : 0;
-        const proposedLeft = isDetail ? originLeft : rect.left - 67 - carouselOriginIndex * (carouselCoverWidth + 10);
-        const left = Math.max(gutter, Math.min(proposedLeft, window.innerWidth - width - gutter));
-        const height = isDetail ? coverHeight : carouselCoverWidth * 1.4 + 34;
-        setPlacement({
-          left,
-          top: Math.max(gutter, Math.min(isDetail ? originTop : rect.top - 21, window.innerHeight - height - gutter)),
-          coverWidth,
-          coverHeight,
-          detailWidth,
-          originOffset: originLeft - left,
-          carouselCoverWidth,
-        });
+      const rect = anchor.getBoundingClientRect();
+      const gutter = 12;
+      const viewportWidth = document.documentElement.clientWidth;
+      const coverWidth = origin?.width || rect.width || 144;
+      const coverHeight = origin?.height || rect.height || 201.6;
+      const originLeft = rect.left + (origin?.left ?? 0);
+      const originTop = rect.top + (origin?.top ?? 0);
+      const detailWidth = Math.min(320, viewportWidth - gutter * 2 - coverWidth);
+      const carouselItemCount = Math.min(3, state.group.items.length);
+      const carouselOverhead = 114 + (carouselItemCount + 1) * 10;
+      const carouselWidth = Math.min(carouselItemCount * 144 + carouselOverhead, viewportWidth - gutter * 2);
+      const carouselCoverWidth = Math.min(144, (carouselWidth - carouselOverhead) / carouselItemCount);
+      const width = isDetail ? coverWidth + detailWidth : carouselWidth;
+      const carouselOriginIndex = carouselItemCount >= 3 ? 1 : 0;
+      const direction = originLeft + coverWidth + detailWidth > viewportWidth - gutter ? "left" : "right";
+      const proposedLeft = isDetail ? originLeft - (direction === "left" ? detailWidth : 0) : rect.left - 67 - carouselOriginIndex * (carouselCoverWidth + 10);
+      const left = Math.max(gutter, Math.min(proposedLeft, viewportWidth - width - gutter));
+      const height = isDetail ? coverHeight : carouselCoverWidth * 1.4 + 34;
+      setPlacement({
+        direction,
+        left,
+        top: isDetail ? originTop : Math.max(gutter, Math.min(rect.top - 21, window.innerHeight - height - gutter)),
+        coverWidth,
+        coverHeight,
+        detailWidth,
+        carouselCoverWidth,
       });
     }
     function scrolled(event: Event) {
       if (event.target instanceof Node && root.current?.contains(event.target)) return;
       cancelAnimationFrame(frame);
-      measure();
+      frame = requestAnimationFrame(measure);
     }
     measure();
     window.addEventListener("scroll", scrolled, true);
@@ -138,7 +138,7 @@ function CalendarOverlay({ state, timeZone, onChange, onClosed }: { state: OpenO
   if (!placement) return null;
   const activeIndex = state.kind === "detail" ? state.selectedIndex : state.startIndex + (state.group.items.length >= 3 ? 1 : 0);
   const anime = state.group.items[activeIndex] ?? state.group.items[0];
-  const variables = { "--cover-width": `${placement.coverWidth}px`, "--detail-width": `${placement.detailWidth}px`, "--origin-offset": `${placement.originOffset}px`, "--available-height": `${window.innerHeight - placement.top - 12}px`, "--carousel-cover-width": `${placement.carouselCoverWidth}px`, left: placement.left, top: placement.top } as CSSProperties;
+  const variables = { "--cover-width": `${placement.coverWidth}px`, "--cover-height": `${placement.coverHeight}px`, "--detail-width": `${placement.detailWidth}px`, "--available-height": `${Math.max(0, window.innerHeight - placement.top)}px`, "--carousel-cover-width": `${placement.carouselCoverWidth}px`, left: isDetail && placement.direction === "left" ? undefined : placement.left, right: isDetail && placement.direction === "left" ? document.documentElement.clientWidth - placement.left - placement.coverWidth - placement.detailWidth : undefined, top: placement.top } as CSSProperties;
   const coverStyle = { width: placement.coverWidth, height: placement.coverHeight };
   const indices = carouselIndices(state.group.items.length, state.kind === "carousel" ? state.startIndex : 0);
   function selectCover(index: number, element: HTMLButtonElement, selection: Activation) {
@@ -146,7 +146,7 @@ function CalendarOverlay({ state, timeZone, onChange, onClosed }: { state: OpenO
     const anchorRect = anchor.getBoundingClientRect();
     onChange({ kind: "detail", group: state.group, anchor, activation: state.activation, selectedIndex: index, selection, origin: { left: rect.left - anchorRect.left, top: rect.top - anchorRect.top, width: rect.width, height: rect.height }, phase: "opening" });
   }
-  return createPortal(<div ref={root} role="dialog" aria-label={isDetail ? `${anime.title} broadcast details` : `${state.group.items.length} broadcasts at ${minuteLabel(state.group.minuteOfDay)}`} data-schedule-overlay={state.kind} data-phase={state.phase} className={`${styles.overlay} ${isDetail ? styles.detailOverlay : ""} ${state.phase === "open" ? styles.expanded : ""}`} style={variables} onPointerEnter={() => {
+  return createPortal(<div ref={root} role="dialog" aria-label={isDetail ? `${anime.title} broadcast details` : `${state.group.items.length} broadcasts at ${minuteLabel(state.group.minuteOfDay)}`} data-schedule-overlay={state.kind} data-phase={state.phase} data-direction={isDetail ? placement.direction : undefined} className={`${styles.overlay} ${isDetail ? `${styles.detailOverlay} ${placement.direction === "left" ? styles.expandLeft : ""}` : ""} ${state.phase === "open" ? styles.expanded : ""}`} style={variables} onPointerEnter={() => {
     if (state.phase === "closing" && state.group.items.length === 1) onChange({ ...state, phase: "open" });
   }} onPointerMove={(event) => { lastPointer.current = { x: event.clientX, y: event.clientY }; }} onPointerLeave={(event) => {
     lastPointer.current = { x: event.clientX, y: event.clientY };
@@ -182,6 +182,7 @@ export function ScheduleCalendar({ days, items, timeZone, view, selectedDay }: {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restoreFocusOnClose = useRef(false);
   const pendingFocus = useRef<HTMLButtonElement | null>(null);
+  const dismissedHover = useRef<HTMLButtonElement | null>(null);
   const changeOverlay = useCallback((next: OverlayState) => {
     if (closeTimer.current !== null) clearTimeout(closeTimer.current);
     closeTimer.current = null;
@@ -197,6 +198,7 @@ export function ScheduleCalendar({ days, items, timeZone, view, selectedDay }: {
     if (overlay.kind === "closed" || overlay.phase === "closing") return;
     if (restoreFocus && overlay.activation === "activate") restoreFocusOnClose.current = true;
     const anchor = overlay.anchor;
+    if (restoreFocus) dismissedHover.current = anchor;
     setOverlay({ ...overlay, phase: "closing" });
     closeTimer.current = setTimeout(() => {
       const activeElement = document.activeElement;
@@ -211,14 +213,17 @@ export function ScheduleCalendar({ days, items, timeZone, view, selectedDay }: {
   const visibleDays = view === "week" ? days : days.slice(selectedDay, selectedDay + 1);
   function open(group: CalendarGroup, anchor: HTMLButtonElement, activation: Activation, openingPointer: { x: number; y: number } | null = null) {
     restoreFocusOnClose.current = false;
+    if (activation === "activate") dismissedHover.current = null;
     pendingFocus.current = null;
     changeOverlay(group.items.length > 1
       ? { kind: "carousel", group, startIndex: 0, anchor, activation, openingPointer, phase: "opening" }
       : { kind: "detail", group, selectedIndex: 0, anchor, activation, selection: activation, phase: "opening" });
   }
   const cover = (group: CalendarGroup) => <button type="button" aria-label={group.items.length === 1 ? `Show details for ${group.items[0].title}` : `${group.items.length} broadcasts at ${minuteLabel(group.minuteOfDay)}`} aria-haspopup="dialog" aria-expanded={overlay.kind !== "closed" && overlay.group.id === group.id} className={styles.cover} style={overlay.kind !== "closed" && overlay.group.id === group.id ? { visibility: "hidden" } : undefined} onPointerEnter={(event) => {
+    if (dismissedHover.current === event.currentTarget) return;
     if (view === "week" && group.items.length === 1 && isHoverPointer(event)) open(group, event.currentTarget, "hover");
   }} onPointerLeave={(event) => {
+    if (dismissedHover.current === event.currentTarget && !containsPointer(event.currentTarget, event)) dismissedHover.current = null;
     if (overlay.kind === "closed" || overlay.group.id !== group.id || group.items.length > 1 || !isHoverPointer(event)) return;
     if (containsPointer(event.currentTarget, event)) return;
     const portal = document.querySelector("[data-schedule-overlay]");
