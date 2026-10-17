@@ -12,9 +12,10 @@ export async function POST(request: Request, context: { params: Promise<{ animeI
     const episodeNumber = await readEpisodeNumber(request);
     const { animeId } = await context.params;
     await withDeadline(signal, 12_000, (metadataSignal) => fetchMetadata(animeId, metadataSignal));
+    const remainingTimeout = Math.max(1, 29_000 - (Date.now() - started));
     const result = await resolveMedia({ animeId, episodeNumber }, mediaProviders, { signal, probeSubtitle, validateVideo,
-      // Finish selection before the outer request deadline so a valid earlier bundle survives.
-      totalTimeout: Math.max(1, 29_000 - (Date.now() - started)),
+      totalTimeout: remainingTimeout,
+      providerTimeout: remainingTimeout,
       log: (event) => console.info(JSON.stringify({ requestId, ...event })) });
     return json(prepareDelivery(result));
   });

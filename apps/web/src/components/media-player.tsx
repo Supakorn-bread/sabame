@@ -9,9 +9,10 @@ interface Props {
 }
 const messages: Record<string, string> = {
   metadata_unavailable: "Anime details are temporarily unavailable. Please retry shortly.",
-  upstream_unavailable: "Anime details are temporarily unavailable. Please retry shortly.",
+  upstream_unavailable: "The video provider is temporarily unavailable. Please retry shortly.",
   provider_unavailable: "The video provider is temporarily unavailable. Please retry shortly.",
   timeout: "Finding a source took too long. Please retry.",
+  english_subtitle_unavailable: "This source has no usable English subtitles. Try another episode or try again later.",
   mapping_required: "This title or season could not be matched safely. Try another title.",
   no_source: "No playable source is available for this title or season from the current providers. Being in your MAL list does not guarantee video availability.",
   episode_unavailable: "This episode is not available from the current providers.",

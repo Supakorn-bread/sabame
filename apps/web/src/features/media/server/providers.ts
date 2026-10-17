@@ -3,6 +3,7 @@ import { exactEpisode, normalizeTitle } from "../identity";
 import { normalizeLanguage } from "../language";
 import { MediaError, type MediaProvider } from "../types";
 import { fetchMetadata } from "./catalog";
+import { getHianimeEpisodes, hianimeAdapter } from "./hianime";
 import { animeParadiseSeedSegments, hasAnimeParadiseSeedConfiguration } from "./seed-provider-mappings";
 import { animeParadise } from "./sdk";
 
@@ -38,12 +39,15 @@ async function fetchAnimeParadiseUnits(animeId: string, signal: AbortSignal, epi
 }
 
 export async function getProviderEpisodes(animeId: string, signal: AbortSignal) {
-  const units = await fetchAnimeParadiseUnits(animeId, signal);
-  const episodes = units.filter((unit) => Number.isSafeInteger(unit.number) && unit.number > 0 && exactEpisode(units, unit.number))
-    .sort((left, right) => left.number - right.number)
-    .slice(0, 2000)
-    .map(({ number, title }) => ({ number, title }));
-  return episodes;
+  try {
+    const units = await fetchAnimeParadiseUnits(animeId, signal);
+    const episodes = units.filter((unit) => Number.isSafeInteger(unit.number) && unit.number > 0 && exactEpisode(units, unit.number))
+      .sort((left, right) => left.number - right.number)
+      .slice(0, 2000)
+      .map(({ number, title }) => ({ number, title }));
+    if (episodes.length) return episodes;
+  } catch { signal.throwIfAborted(); }
+  return getHianimeEpisodes(animeId, signal);
 }
 
 export const animeParadiseAdapter: MediaProvider = {
@@ -66,4 +70,4 @@ export const animeParadiseAdapter: MediaProvider = {
   },
 };
 /** Enable providers only after their adapter and delivery host policy have been verified. */
-export const mediaProviders: MediaProvider[] = [animeParadiseAdapter];
+export const mediaProviders: MediaProvider[] = [animeParadiseAdapter, hianimeAdapter];

@@ -18,8 +18,8 @@ export async function withDeadline<T>(signal: AbortSignal, milliseconds: number,
 }
 export async function resolveMedia(episode: EpisodeRequest, providers: MediaProvider[], options: {
   signal: AbortSignal;
-  probeSubtitle: SubtitleProbe;
-  validateVideo: (url: string, signal: AbortSignal) => Promise<void>;
+  probeSubtitle: (url: string, signal: AbortSignal, providerId?: string) => ReturnType<SubtitleProbe>;
+  validateVideo: (url: string, signal: AbortSignal, providerId?: string) => Promise<void>;
   providerTimeout?: number;
   totalTimeout?: number;
   log?: (event: { provider: string; stage: string; latencyMs: number; code: string }) => void;
@@ -35,11 +35,12 @@ export async function resolveMedia(episode: EpisodeRequest, providers: MediaProv
         try {
           const result = await withDeadline(totalSignal, options.providerTimeout ?? 12_000, async (signal) => {
             const bundle = await provider.resolve(episode, signal);
-            await options.validateVideo(bundle.video.url, signal);
-            const subtitles = await resolveSubtitles(bundle.subtitles, options.probeSubtitle, signal);
+            await options.validateVideo(bundle.video.url, signal, provider.id);
+            const subtitles = await resolveSubtitles(bundle.subtitles, (url, subtitleSignal) => options.probeSubtitle(url, subtitleSignal, provider.id), signal);
             signal.throwIfAborted();
             const thai = subtitles.filter((t) => t.language === "th");
             const score = subtitles.some((t) => t.language === "en" && t.displaySupported) ? 2 : thai.some((t) => t.displaySupported) ? 1 : 0;
+            if (provider.requiresEnglishSubtitles && score !== 2) throw new MediaError("english_subtitle_unavailable");
             const media: MediaResult = { provider: provider.id, video: bundle.video, subtitles, metadata: episode,
               thaiStatus: thai.some((t) => t.availability === "available") ? "present" : thai.length ? "unavailable" : bundle.subtitles ? "absent_in_returned_tracks" : "unknown",
               selectionReason: score === 2 ? "english_subtitle" : score === 1 ? "thai_subtitle" : "video_only" };

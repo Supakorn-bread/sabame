@@ -2,23 +2,25 @@ import "server-only";
 import { detectSubtitleFormat, toWebVtt } from "../subtitles";
 import { MediaError, type MediaResult } from "../types";
 import { fetchResource } from "./resource-fetch";
-import { rewriteHls, signResource, verifyResource } from "./resource-security";
+import { deliveryPolicyForProvider, rewriteHls, signResource, verifyResource } from "./resource-security";
 
-export async function probeSubtitle(url: string, signal: AbortSignal) {
-  const resource = await fetchResource(url, signal);
+export async function probeSubtitle(url: string, signal: AbortSignal, providerId?: string) {
+  const resource = await fetchResource(url, signal, { policy: deliveryPolicyForProvider(providerId) });
   return detectSubtitleFormat(resource.body.toString("utf8"));
 }
-export async function validateVideo(url: string, signal: AbortSignal) {
-  const resource = await fetchResource(url, signal, { maxBytes: 1_048_576, range: "bytes=0-65535" });
+export async function validateVideo(url: string, signal: AbortSignal, providerId?: string) {
+  const policy = deliveryPolicyForProvider(providerId);
+  const resource = await fetchResource(url, signal, { policy, maxBytes: 1_048_576, range: "bytes=0-65535" });
   const text = resource.body.toString("utf8");
   if (text.trimStart().startsWith("#EXTM3U")) {
-    rewriteHls(text, { url: resource.url, kind: "hls", exp: Date.now() + 30 * 60_000 });
+    rewriteHls(text, { url: resource.url, kind: "hls", policy, exp: Date.now() + 30 * 60_000 });
   } else if (resource.body.subarray(4, 8).toString() !== "ftyp") throw new MediaError("invalid_video");
 }
 export function prepareDelivery(result: MediaResult): MediaResult {
   const exp = Date.now() + 30 * 60_000;
-  return { ...result, video: { ...result.video, expiresAt: exp, url: signResource({ url: result.video.url, kind: result.video.type, exp }) },
-    subtitles: result.subtitles.map((track) => ({ ...track, url: track.availability === "available" ? signResource({ url: track.url, kind: "subtitle", exp }) : "" })) };
+  const policy = deliveryPolicyForProvider(result.provider);
+  return { ...result, video: { ...result.video, expiresAt: exp, url: signResource({ url: result.video.url, kind: result.video.type, policy, exp }) },
+    subtitles: result.subtitles.map((track) => ({ ...track, url: track.availability === "available" ? signResource({ url: track.url, kind: "subtitle", policy, exp }) : "" })) };
 }
 export function boundedRange(value: string | null): string {
   if (!value) return "bytes=0-8388607";
@@ -32,6 +34,7 @@ export function boundedRange(value: string | null): string {
 export async function deliverResource(request: Request) {
   const ticket = verifyResource(new URL(request.url).searchParams.get("ticket") ?? "");
   const resource = await fetchResource(ticket.url, request.signal, {
+    policy: ticket.policy,
     maxBytes: ticket.kind === "mp4" ? 8_388_608 : ticket.kind === "segment" ? 33_554_432 : 1_048_576,
     ...(ticket.kind === "mp4" ? { range: boundedRange(request.headers.get("range")) } : {}),
   });

@@ -2,8 +2,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("./catalog", () => ({ fetchMetadata: vi.fn() }));
+vi.mock("./hianime", () => ({ getHianimeEpisodes: vi.fn(), hianimeAdapter: { id: "hianime", resolve: vi.fn() } }));
 vi.mock("./sdk", () => ({ animeParadise: { search: vi.fn(), fetchContentUnits: vi.fn(), resolveStream: vi.fn() }, mappingClient: { resolveProviderMediaId: vi.fn() } }));
 import { fetchMetadata } from "./catalog";
+import { getHianimeEpisodes } from "./hianime";
 import { animeParadise, mappingClient } from "./sdk";
 import { animeParadiseAdapter, getProviderEpisodes } from "./providers";
 
@@ -114,6 +116,17 @@ describe("SDK provider boundary", () => {
       { id: "animeparadise:episode-1:test", title: "First", number: 1 },
     ]);
     expect(await getProviderEpisodes("mal-1", new AbortController().signal)).toEqual([{ number: 1, title: "First" }, { number: 4, title: "Fourth" }]);
+    expect(getHianimeEpisodes).not.toHaveBeenCalled();
+  });
+  it("uses verified fallback inventory when the primary provider has no source", async () => {
+    vi.mocked(getHianimeEpisodes).mockResolvedValue([{ number: 1, title: "Let You Down" }]);
+    expect(await getProviderEpisodes("neon-requiem", new AbortController().signal)).toEqual([{ number: 1, title: "Let You Down" }]);
+    expect(getHianimeEpisodes).toHaveBeenCalledWith("neon-requiem", expect.any(AbortSignal));
+  });
+  it("uses verified fallback inventory after a primary provider failure", async () => {
+    vi.mocked(animeParadise.fetchContentUnits).mockRejectedValue(new Error("unavailable"));
+    vi.mocked(getHianimeEpisodes).mockResolvedValue([{ number: 3, title: "Third" }]);
+    expect(await getProviderEpisodes("mal-1", new AbortController().signal)).toEqual([{ number: 3, title: "Third" }]);
   });
   it("omits ambiguous episode numbers from provider availability", async () => {
     vi.mocked(animeParadise.fetchContentUnits).mockResolvedValue([

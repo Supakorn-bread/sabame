@@ -140,8 +140,10 @@ describe("real media player", () => {
   });
   it.each([
     ["metadata_unavailable", "Anime details are temporarily unavailable"],
+    ["upstream_unavailable", "The video provider is temporarily unavailable"],
     ["provider_unavailable", "The video provider is temporarily unavailable"],
     ["timeout", "Finding a source took too long"],
+    ["english_subtitle_unavailable", "no usable English subtitles"],
     ["no_source", "No playable source is available for this title"],
   ])("explains %s without conflating an outage with a missing title", async (code, message) => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: false, json: async () => ({ error: { code } }) } as Response);

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 import { isPublicAddress, rewriteHls, signResource, validateResourceUrl, verifyResource } from "./resource-security";
@@ -6,7 +7,7 @@ import { boundedRange } from "./delivery";
 
 beforeEach(() => vi.stubEnv("MEDIA_PROXY_SECRET", "test-secret-".repeat(5)));
 afterEach(() => vi.unstubAllEnvs());
-const ticket = () => ({ url: "https://stream.animeparadise.moe/a/master.m3u8", kind: "hls" as const, exp: Date.now() + 60_000 });
+const ticket = () => ({ url: "https://stream.animeparadise.moe/a/master.m3u8", kind: "hls" as const, policy: "default" as const, exp: Date.now() + 60_000 });
 function value(url: string) { return new URL(url, "https://sabame.test").searchParams.get("ticket")!; }
 describe("signed media resources", () => {
   it("round trips and rejects tampering, malformed tickets and expiry", () => {
@@ -23,12 +24,42 @@ describe("signed media resources", () => {
     const parent = ticket();
     const output = rewriteHls('#EXTM3U\n#EXT-X-MEDIA:TYPE=SUBTITLES,URI="sub.m3u8"\n#EXT-X-STREAM-INF:BANDWIDTH=800000\nlow/index.m3u8\n', parent);
     const inline = /URI="([^"]+)"/.exec(output)![1];
-    expect(verifyResource(value(inline))).toEqual({ url: "https://stream.animeparadise.moe/a/sub.m3u8", kind: "hls", exp: parent.exp });
+    expect(verifyResource(value(inline))).toEqual({ url: "https://stream.animeparadise.moe/a/sub.m3u8", kind: "hls", exp: parent.exp, policy: "default" });
     expect(verifyResource(value(output.split("\n")[3])).url).toBe("https://stream.animeparadise.moe/a/low/index.m3u8");
   });
   it("rejects unapproved HLS child hosts and encrypted streams", () => {
     expect(() => rewriteHls("#EXTM3U\nhttps://evil.test/segment.ts", ticket())).toThrow();
     expect(() => rewriteHls('#EXTM3U\n#EXT-X-KEY:METHOD=SAMPLE-AES,URI="key"', ticket())).toThrow("encrypted_media_unsupported");
+  });
+  it("preserves signed legacy AnimeParadise tickets under the default policy only", () => {
+    const source = ticket();
+    const legacy = { url: source.url, kind: source.kind, exp: source.exp };
+    const encode = (body: typeof legacy) => {
+      const payload = Buffer.from(JSON.stringify(body)).toString("base64url");
+      return `${payload}.${createHmac("sha256", process.env.MEDIA_PROXY_SECRET!).update(payload).digest("base64url")}`;
+    };
+    expect(verifyResource(encode(legacy))).toEqual(source);
+    expect(() => verifyResource(encode({ ...legacy, url: "https://hls.dramahot.top/a" }))).toThrow("resource_host_not_allowed");
+  });
+  it("keeps the fallback policy on every signed HLS child", () => {
+    const parent = { ...ticket(), url: "https://hls.dramahot.top/a/master.m3u8", policy: "hianime" as const };
+    const output = rewriteHls('#EXTM3U\n#EXT-X-MEDIA:TYPE=SUBTITLES,URI="en.m3u8"\nhttps://hls1.drama1.cfd/one.ts', parent);
+    const inline = /URI="([^"]+)"/.exec(output)![1];
+    expect(verifyResource(value(inline))).toEqual({ ...parent, url: "https://hls.dramahot.top/a/en.m3u8" });
+    expect(verifyResource(value(output.split("\n")[2]))).toEqual({ ...parent, kind: "segment", url: "https://hls1.drama1.cfd/one.ts" });
+    expect(() => rewriteHls("#EXTM3U\nhttps://stream.animeparadise.moe/one.ts", parent)).toThrow("resource_host_not_allowed");
+    expect(() => rewriteHls("#EXTM3U\nhttps://hls1.drama1.cfd.evil.test/one.ts", parent)).toThrow("resource_host_not_allowed");
+    expect(() => rewriteHls('#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key"', parent)).toThrow("encrypted_media_unsupported");
+  });
+  it("rejects a changed or unknown signed delivery policy", () => {
+    const signed = value(signResource(ticket()));
+    const [payload, signature] = signed.split(".");
+    const changed = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(payload, "base64url").toString()), policy: "hianime" })).toString("base64url");
+    expect(() => verifyResource(`${changed}.${signature}`)).toThrow("invalid_ticket");
+    const unknown = Buffer.from(JSON.stringify({ ...ticket(), policy: "arbitrary" })).toString("base64url");
+    const unknownSignature = createHmac("sha256", process.env.MEDIA_PROXY_SECRET!).update(unknown).digest("base64url");
+    expect(() => verifyResource(`${unknown}.${unknownSignature}`)).toThrow("invalid_ticket");
+    expect(() => signResource({ ...ticket(), url: "https://hls.dramahot.top/a" })).toThrow("resource_host_not_allowed");
   });
   it("caps MP4 ranges without downloading the whole video", () => {
     expect(boundedRange("bytes=100-99999999")).toBe("bytes=100-8388707");

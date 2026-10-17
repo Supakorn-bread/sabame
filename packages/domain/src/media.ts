@@ -30,6 +30,7 @@ export interface MediaBundle {
 export interface EpisodeRequest { animeId: string; episodeNumber: number }
 export interface MediaProvider {
   id: string;
+  requiresEnglishSubtitles?: boolean;
   resolve(episode: EpisodeRequest, signal: AbortSignal): Promise<MediaBundle>;
 }
 /** Future external sources must supply matching evidence; they are never merged automatically. */

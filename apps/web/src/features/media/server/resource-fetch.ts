@@ -3,13 +3,15 @@ import { lookup } from "node:dns/promises";
 import { request } from "node:https";
 import type { IncomingHttpHeaders } from "node:http";
 import { MediaError } from "../types";
-import { isPublicAddress, validateResourceUrl } from "./resource-security";
+import { allowedHosts, isPublicAddress, resourceReferer, validateResourceUrl, type DeliveryPolicyId } from "./resource-security";
 
 export interface ResourceBody { body: Buffer; status: number; headers: IncomingHttpHeaders; url: string }
+interface ResourceOptions { maxBytes?: number; range?: string; redirects?: number; policy?: DeliveryPolicyId }
 /** DNS is validated on every redirect and pinned in the actual TLS connection. */
-export async function fetchResource(value: string, signal: AbortSignal, options: { maxBytes?: number; range?: string; redirects?: number } = {}): Promise<ResourceBody> {
+export async function fetchResource(value: string, signal: AbortSignal, options: ResourceOptions = {}): Promise<ResourceBody> {
   signal.throwIfAborted();
-  const url = validateResourceUrl(value);
+  const policy = options.policy ?? "default";
+  const url = validateResourceUrl(value, allowedHosts(policy));
   const addresses = await lookup(url.hostname, { all: true });
   signal.throwIfAborted();
   if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) throw new MediaError("private_resource_address");
@@ -19,7 +21,7 @@ export async function fetchResource(value: string, signal: AbortSignal, options:
     const req = request(url, {
       signal,
       family: pinned.family,
-      headers: { Referer: "https://animeparadise.moe/", "Accept-Encoding": "identity", ...(options.range ? { Range: options.range } : {}) },
+      headers: { Referer: resourceReferer(policy), "Accept-Encoding": "identity", ...(options.range ? { Range: options.range } : {}) },
       lookup: (_host, options, callback) => options.all ? callback(null, [pinned]) : callback(null, pinned.address, pinned.family),
     }, (res) => {
       const status = res.statusCode ?? 502;

@@ -58,6 +58,24 @@ describe("episode-specific provider fallback", () => {
     const deadOptions = options(); deadOptions.probeSubtitle.mockRejectedValue(new Error("404"));
     expect(await resolveMedia(episode, [provider("dead", [track("th")])], deadOptions)).toMatchObject({ thaiStatus: "unavailable", selectionReason: "video_only", subtitles: [{ default: false, availability: "unavailable" }] });
   });
+  it("requires usable English when the fallback declares that requirement", async () => {
+    for (const subtitles of [[], [track("th")], [track("en")]]) {
+      const fallback = { ...provider("hianime", subtitles), requiresEnglishSubtitles: true };
+      const opts = options();
+      if (subtitles[0]?.language === "en") opts.probeSubtitle.mockRejectedValue(new Error("404"));
+      await expect(resolveMedia(episode, [fallback], opts)).rejects.toThrow("english_subtitle_unavailable");
+    }
+    const fallback = { ...provider("hianime", [track("en")]), requiresEnglishSubtitles: true };
+    const unsupported = options(); unsupported.probeSubtitle.mockResolvedValue("ass");
+    await expect(resolveMedia(episode, [fallback], unsupported)).rejects.toThrow("english_subtitle_unavailable");
+    const opts = options();
+    expect(await resolveMedia(episode, [fallback], opts)).toMatchObject({ provider: "hianime", selectionReason: "english_subtitle" });
+    expect(opts.validateVideo).toHaveBeenCalledWith("https://example.com/hianime.m3u8", expect.any(AbortSignal), "hianime");
+    expect(opts.probeSubtitle).toHaveBeenCalledWith("https://example.com/en.vtt", expect.any(AbortSignal), "hianime");
+  });
+  it("retains the primary candidate when the fallback has no usable English", async () => {
+    expect(await resolveMedia(episode, [provider("animeparadise", []), { ...provider("hianime", [track("th")]), requiresEnglishSubtitles: true }], options())).toMatchObject({ provider: "animeparadise", selectionReason: "video_only" });
+  });
   it("times out an adapter that ignores cancellation and falls back", async () => {
     const hanging: MediaProvider = { id: "hanging", resolve: () => new Promise(() => {}) };
     expect(await resolveMedia(episode, [hanging, provider("good", [])], { ...options(), providerTimeout: 10 })).toMatchObject({ provider: "good" });

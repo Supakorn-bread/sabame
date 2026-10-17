@@ -46,6 +46,26 @@ describe("bounded resource transport", () => {
     respond("", 302, { location: "https://evil.test/a" });
     await expect(fetchResource(url, new AbortController().signal)).rejects.toThrow("resource_host_not_allowed");
   });
+  it("uses the fixed fallback referer on every allowed redirect", async () => {
+    respond("", 302, { location: "https://hls1.drama1.cfd/one.ts" });
+    respond("segment");
+    expect((await fetchResource("https://hls.dramahot.top/master.m3u8", new AbortController().signal, { policy: "hianime" })).body.toString()).toBe("segment");
+    expect(lookup).toHaveBeenNthCalledWith(1, "hls.dramahot.top", { all: true });
+    expect(lookup).toHaveBeenNthCalledWith(2, "hls1.drama1.cfd", { all: true });
+    for (const [, options] of vi.mocked(request).mock.calls) {
+      expect(options).toMatchObject({ headers: { Referer: "https://zokoanime.video/", "Accept-Encoding": "identity" } });
+    }
+  });
+  it.each(["https://stream.animeparadise.moe/a", "https://evil.test/a", "https://hls1.drama1.cfd.evil.test/a"])("rejects fallback redirects outside its exact hosts %s", async (location) => {
+    respond("", 302, { location });
+    await expect(fetchResource("https://hls.dramahot.top/master.m3u8", new AbortController().signal, { policy: "hianime" })).rejects.toThrow("resource_host_not_allowed");
+    expect(request).toHaveBeenCalledOnce();
+  });
+  it("keeps DNS checks for fallback hosts", async () => {
+    vi.mocked(lookup).mockResolvedValue([{ address: "10.0.0.1", family: 4 }] as never);
+    await expect(fetchResource("https://hls.dramahot.top/master.m3u8", new AbortController().signal, { policy: "hianime" })).rejects.toThrow("private_resource_address");
+    expect(request).not.toHaveBeenCalled();
+  });
   it("enforces body limits even without content-length", async () => {
     respond("too large");
     await expect(fetchResource(url, new AbortController().signal, { maxBytes: 3 })).rejects.toThrow("resource_too_large");

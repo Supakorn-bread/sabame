@@ -4,8 +4,16 @@ import { isIP } from "node:net";
 import { MediaError } from "../types";
 
 export type ResourceKind = "hls" | "mp4" | "subtitle" | "segment";
-export interface ResourceTicket { url: string; kind: ResourceKind; exp: number }
-export function allowedHosts() {
+export type DeliveryPolicyId = "default" | "hianime";
+export interface ResourceTicket { url: string; kind: ResourceKind; exp: number; policy: DeliveryPolicyId }
+export function deliveryPolicyForProvider(providerId?: string): DeliveryPolicyId {
+  return providerId === "hianime" ? "hianime" : "default";
+}
+export function resourceReferer(policy: DeliveryPolicyId): string {
+  return policy === "hianime" ? "https://zokoanime.video/" : "https://animeparadise.moe/";
+}
+export function allowedHosts(policy: DeliveryPolicyId = "default") {
+  if (policy === "hianime") return new Set(["hls.dramahot.top", "hls1.drama1.cfd"]);
   return new Set(["stream.animeparadise.moe", "api.animeparadise.moe",
     ...(process.env.MEDIA_ALLOWED_HOSTS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)]);
 }
@@ -30,7 +38,7 @@ function secret() {
   return value;
 }
 export function signResource(ticket: ResourceTicket): string {
-  validateResourceUrl(ticket.url);
+  validateResourceUrl(ticket.url, allowedHosts(ticket.policy));
   const payload = Buffer.from(JSON.stringify(ticket)).toString("base64url");
   const signature = createHmac("sha256", secret()).update(payload).digest("base64url");
   return `/api/media/resource?ticket=${payload}.${signature}`;
@@ -44,15 +52,16 @@ export function verifyResource(value: string, now = Date.now()): ResourceTicket 
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new MediaError("invalid_ticket");
   let ticket: ResourceTicket;
   try { ticket = JSON.parse(Buffer.from(payload, "base64url").toString()); } catch { throw new MediaError("invalid_ticket"); }
-  if (!ticket || !["hls", "mp4", "subtitle", "segment"].includes(ticket.kind) || typeof ticket.url !== "string" || !Number.isFinite(ticket.exp)) throw new MediaError("invalid_ticket");
+  if (ticket && typeof ticket === "object" && ticket.policy === undefined) ticket.policy = "default";
+  if (!ticket || !["hls", "mp4", "subtitle", "segment"].includes(ticket.kind) || typeof ticket.url !== "string" || !["default", "hianime"].includes(ticket.policy) || !Number.isFinite(ticket.exp)) throw new MediaError("invalid_ticket");
   if (ticket.exp <= now || ticket.exp > now + 31 * 60_000) throw new MediaError("source_expired");
-  validateResourceUrl(ticket.url);
+  validateResourceUrl(ticket.url, allowedHosts(ticket.policy));
   return ticket;
 }
 export function rewriteHls(text: string, parent: ResourceTicket): string {
   if (!text.trimStart().startsWith("#EXTM3U")) throw new MediaError("invalid_manifest");
   if (/^#EXT-X-(?:SESSION-)?KEY:.*METHOD=(?!NONE(?:,|$))/m.test(text)) throw new MediaError("encrypted_media_unsupported");
-  const child = (value: string, kind: ResourceKind = "segment") => signResource({ url: new URL(value, parent.url).href, kind, exp: parent.exp });
+  const child = (value: string, kind: ResourceKind = "segment") => signResource({ url: new URL(value, parent.url).href, kind, exp: parent.exp, policy: parent.policy });
   return text.split(/\r?\n/).map((line) => {
     if (!line.trim()) return line;
     if (line.startsWith("#")) return line.replace(/URI="([^"]+)"/g, (_, uri: string) => `URI="${child(uri, line.startsWith("#EXT-X-MEDIA:") ? "hls" : "segment")}"`);
