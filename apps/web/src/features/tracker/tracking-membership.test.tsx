@@ -12,7 +12,7 @@ const anime: SeasonalAnime = {
 };
 vi.mock("next/navigation", () => ({ useParams: () => ({ animeId: "mal-101" }) }));
 vi.mock("@/components/layout/app-shell", () => ({ AppShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main> }));
-vi.mock("@/features/media/use-catalog", () => ({ useCatalogAnime: () => ({ anime }), useCatalogEpisodes: () => [1, 2, 3] }));
+vi.mock("@/features/media/use-catalog", () => ({ useCatalogAnime: () => ({ anime }), useCatalogEpisodes: () => ({ numbers: [1, 2, 3], status: "ready" }) }));
 vi.mock("@/components/media-player", () => ({ MediaPlayer: () => <div>Player</div> }));
 vi.mock("@/components/simulated-player", () => ({ SimulatedPlayer: () => <div>Demo player</div> }));
 

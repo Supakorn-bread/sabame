@@ -2,10 +2,41 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const router = vi.hoisted(() => ({ replace: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
-import { useCatalogAnime, useCatalogSearch } from "./use-catalog";
+import { useCatalogAnime, useCatalogEpisodes, useCatalogSearch } from "./use-catalog";
 import { trackerStore } from "@/features/tracker/store";
 beforeEach(() => { vi.useFakeTimers(); vi.stubGlobal("fetch", vi.fn()); });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+describe("provider episode availability", () => {
+  it("shows loading before returning only the provider's episode numbers", async () => {
+    let finish!: (response: Response) => void;
+    vi.mocked(fetch).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const { result } = renderHook(() => useCatalogEpisodes("mal-1", true));
+    expect(fetch).toHaveBeenCalledWith("/api/anime/mal-1/available-episodes", expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(result.current).toMatchObject({ numbers: [], status: "loading" });
+    await act(async () => { finish(Response.json({ episodes: [{ number: 4 }, { number: 1 }, { number: 4 }, { number: -1 }] })); });
+    expect(result.current).toMatchObject({ numbers: [1, 4], status: "ready" });
+  });
+  it.each([200, 404])("distinguishes an empty provider catalog from errors for HTTP %s", async (status) => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({ episodes: [] }, { status }));
+    const { result } = renderHook(() => useCatalogEpisodes("mal-1", true));
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(result.current).toMatchObject({ numbers: [], status: "ready" });
+  });
+  it("reports an upstream error without inventing episode buttons", async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({ error: { code: "timeout" } }, { status: 504 }));
+    const { result } = renderHook(() => useCatalogEpisodes("mal-1", true));
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(result.current).toMatchObject({ numbers: [], status: "error" });
+  });
+  it("discards a previous title's list while loading another title", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ episodes: [{ number: 4 }] })).mockReturnValueOnce(new Promise(() => {}));
+    const { result, rerender } = renderHook(({ animeId }) => useCatalogEpisodes(animeId, true), { initialProps: { animeId: "mal-1" } });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(result.current).toMatchObject({ numbers: [4], status: "ready" });
+    rerender({ animeId: "mal-2" });
+    expect(result.current).toMatchObject({ numbers: [], status: "loading" });
+  });
+});
 describe("remote catalog search", () => {
   it("can retry a failed search without changing the query", async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new Error("offline"));

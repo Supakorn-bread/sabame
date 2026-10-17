@@ -75,7 +75,7 @@ test("mobile and dark seasonal cards remain accessible, and catalog failures can
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   await page.screenshot({ path: "test-results/seasonal-mobile.png", fullPage: true });
   await page.route("**/api/anime/mal-52991", (route) => route.fulfill({ json: titles[0] }));
-  await page.route("**/api/anime/mal-52991/episodes", (route) => route.fulfill({ json: { episodes: [] } }));
+  await page.route("**/api/anime/mal-52991/available-episodes", (route) => route.fulfill({ json: { episodes: [] } }));
   await page.getByRole("heading", { name: "Frieren: Beyond Journey's End" }).getByRole("link").click();
   await expect(page).toHaveURL("/watch/mal-52991");
   await expect(page.getByRole("heading", { name: "Frieren: Beyond Journey's End" })).toBeVisible();

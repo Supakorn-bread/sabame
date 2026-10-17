@@ -128,7 +128,7 @@ test("an imported MAL title keeps its identity and selected episode through play
   await mockMalSession(page, { signedIn: true });
   const anime = importedItems[2].anime;
   await page.route(`**/api/anime/${anime.id}`, (route) => route.fulfill({ json: anime }));
-  await page.route(`**/api/anime/${anime.id}/episodes`, (route) => route.fulfill({ json: { episodes: Array.from({ length: 12 }, (_, i) => ({ number: i + 1 })) } }));
+  await page.route(`**/api/anime/${anime.id}/available-episodes`, (route) => route.fulfill({ json: { episodes: Array.from({ length: 12 }, (_, i) => ({ number: i + 1 })) } }));
   const video = await readFile("e2e/fixtures/player.mp4");
   await page.route("**/fixture/mal-player.mp4", (route) => route.fulfill({ contentType: "video/mp4", body: video }));
   const requests: number[] = [];

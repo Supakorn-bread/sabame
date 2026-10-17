@@ -15,6 +15,34 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 describe("real media player", () => {
+  it("shows a provider-catalog loading status until the catalog is ready", () => {
+    const callbacks = props();
+    const { container, rerender } = render(<MediaPlayer {...callbacks} providerLoading />);
+    expect(container.querySelector(".aspect-video")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Checking provider catalog");
+    expect(screen.queryByRole("button", { name: "Play episode" })).not.toBeInTheDocument();
+    expect(container.querySelector("video")).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+
+    rerender(<MediaPlayer {...callbacks} providerLoading={false} />);
+    expect(screen.getByRole("button", { name: "Play episode" })).toBeEnabled();
+  });
+  it("shows the same loading presentation during a manual source lookup", async () => {
+    let finish!: (response: Response) => void;
+    vi.mocked(fetch).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    const { container } = render(<MediaPlayer {...props()} imageUrl="https://example.com/cover.jpg" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Finding source");
+    expect(screen.queryByRole("button", { name: "Play episode" })).not.toBeInTheDocument();
+    expect(container.querySelector("video")).toBeNull();
+    expect(container.querySelector(".aspect-video")?.getAttribute("style")).toBeNull();
+
+    await act(async () => finish({ ok: true, json: async () => result } as Response));
+    expect(await screen.findByRole("combobox", { name: "Subtitles" })).toBeVisible();
+    expect(container.querySelector("video")).toBeInTheDocument();
+    expect(screen.queryByText("Finding source…")).not.toBeInTheDocument();
+  });
   it("resolves only on Play, restores position from actual duration, and selects Thai or Off", async () => {
     const callbacks = props(); const { container } = render(<MediaPlayer {...callbacks} />);
     expect(fetch).not.toHaveBeenCalled();

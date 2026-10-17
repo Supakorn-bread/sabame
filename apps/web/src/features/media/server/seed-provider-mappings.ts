@@ -24,7 +24,7 @@ const animeParadiseSeedMappings: Record<string, SeedProviderSegment[]> = {
 // Exact one-to-one MAL identities can reuse the reviewed delivery mappings.
 // The combined Mushoku demo entry is deliberately excluded.
 const canonicalAliases: Record<string, string> = {
-  "mal-52991": "skyward-bloom", "mal-42310": "neon-requiem",
+  "mal-52991": "skyward-bloom",
   "mal-51009": "constellation-code", "mal-55701": "last-shrine", "mal-48316": "harbor-of-wishes",
 };
 export function hasAnimeParadiseSeedConfiguration(animeId: string) {
@@ -33,4 +33,8 @@ export function hasAnimeParadiseSeedConfiguration(animeId: string) {
 
 export function animeParadiseSeedSegment(animeId: string, episodeNumber: number) {
   return animeParadiseSeedMappings[canonicalAliases[animeId] ?? animeId]?.find(({ episodeStart, episodeEnd }) => episodeNumber >= episodeStart && episodeNumber <= episodeEnd);
+}
+
+export function animeParadiseSeedSegments(animeId: string) {
+  return animeParadiseSeedMappings[canonicalAliases[animeId] ?? animeId] ?? [];
 }

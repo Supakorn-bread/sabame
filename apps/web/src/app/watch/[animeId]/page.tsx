@@ -60,7 +60,8 @@ export default function WatchPage() {
   );
   if (!entry) return <AppShell><div className="h-[70vh]" /></AppShell>;
 
-  const upcomingEpisodes = catalogEpisodes.length ? catalogEpisodes : Array.from({ length: Math.min(anime.totalEpisodes ?? entry.currentEpisode, 2000) }, (_, index) => index + 1);
+  const providerEpisodes = animeId.startsWith("mal-");
+  const upcomingEpisodes = providerEpisodes ? catalogEpisodes.numbers : Array.from({ length: Math.min(anime.totalEpisodes ?? entry.currentEpisode, 2000) }, (_, index) => index + 1);
   let trackingMessage = "Changes save automatically in this browser.";
   if (!canSyncProgress) trackingMessage = "Tracking is disabled for this non-MAL catalog entry.";
   else if (malUser) trackingMessage = trackingMessages[trackingStatus];
@@ -70,9 +71,9 @@ export default function WatchPage() {
     <AppShell>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-8">
-          {demo && !malUser ? <SimulatedPlayer key={`${animeId}-${entry.currentEpisode}`} title={anime.title} episode={entry.currentEpisode} durationSeconds={anime.episodeMinutes * 60 || 1440} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} /> : <MediaPlayer key={`${animeId}-${entry.currentEpisode}`} animeId={animeId} title={anime.title} episode={entry.currentEpisode} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} />}
+          {demo && !malUser ? <SimulatedPlayer key={`${animeId}-${entry.currentEpisode}`} title={anime.title} episode={entry.currentEpisode} durationSeconds={anime.episodeMinutes * 60 || 1440} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} /> : <MediaPlayer key={`${animeId}-${entry.currentEpisode}`} animeId={animeId} title={anime.title} episode={entry.currentEpisode} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} providerLoading={catalogEpisodes.status === "loading"} />}
           <label className="flex items-center gap-2 text-sm text-[var(--text-soft)]"><input type="checkbox" checked={demo && !malUser} disabled={Boolean(malUser)} onChange={(event) => setDemo(event.target.checked)} />{malUser ? "Demo simulator is unavailable while MyAnimeList is connected" : "Use demo simulator (no video source)"}</label>
-          {anime.totalEpisodes === null && <p className="text-sm">Episode count is unknown. <button type="button" className="rounded border px-3 py-2" onClick={() => selectEpisode(anime.id, entry.currentEpisode + 1)}>Select next episode</button></p>}
+          {anime.totalEpisodes === null && <p className="text-sm">Episode count is unknown.{!providerEpisodes && <> <button type="button" className="rounded border px-3 py-2" onClick={() => selectEpisode(anime.id, entry.currentEpisode + 1)}>Select next episode</button></>}</p>}
 
           <div className="grid grid-cols-1 gap-6">
             <section className="flex flex-col gap-4" aria-labelledby="anime-title">
@@ -98,8 +99,11 @@ export default function WatchPage() {
 
         <aside className="flex flex-col gap-6 lg:col-span-4" aria-label="Watch sidebar">
           <section className="glass-panel overflow-hidden rounded-xl" aria-labelledby="episodes-heading">
-            <div className="flex items-center justify-between border-b border-[var(--border)] p-4"><h2 id="episodes-heading" className="eyebrow">Episodes</h2><span className="text-xs text-[var(--text-soft)]">{anime.totalEpisodes ?? "?"} Episodes</span></div>
+            <div className="flex items-center justify-between border-b border-[var(--border)] p-4"><h2 id="episodes-heading" className="eyebrow">Episodes</h2><span className="text-xs text-[var(--text-soft)]">{providerEpisodes ? "Provider catalog" : `${anime.totalEpisodes ?? "?"} Episodes`}</span></div>
             <div className="max-h-[440px] space-y-1 overflow-y-auto p-2">
+              {providerEpisodes && catalogEpisodes.status === "loading" && <p role="status" className="p-3 text-sm text-[var(--text-soft)]">Checking provider episodes…</p>}
+              {providerEpisodes && catalogEpisodes.status === "error" && <p role="status" className="p-3 text-sm text-[var(--text-soft)]">Provider episodes could not be loaded. Reload to try again.</p>}
+              {providerEpisodes && catalogEpisodes.status === "ready" && !upcomingEpisodes.length && <p role="status" className="p-3 text-sm text-[var(--text-soft)]">No episodes were found in the provider catalog.</p>}
               {upcomingEpisodes.map((episode, index) => {
                 const active = episode === entry.currentEpisode;
                 return <button key={`${episode}-${index}`} type="button" onClick={() => selectEpisode(anime.id, episode)} aria-current={active ? "true" : undefined} className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left transition ${active ? "border-[var(--border-strong)] bg-[var(--primary-soft)]" : "border-transparent hover:bg-[var(--bg-high)]"}`}><span className="relative h-16 w-24 shrink-0 overflow-hidden rounded"><span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-[var(--primary-soft)] text-[var(--primary)]">{anime.coverUrl ? <Image src={anime.coverUrl} alt="" fill sizes="96px" className="object-cover" /> : episode}</span>{active && <span className="absolute inset-0 grid place-items-center bg-black/20 text-white"><PlayCircle size={21} /></span>}</span><span className="min-w-0"><span className={`block text-xs ${active ? "text-[var(--primary)]" : "text-[var(--text-soft)]"}`}>Episode {episode}</span><span className="block truncate text-sm">{active ? "Selected" : episode <= entry.watchedEpisodes ? "Watched" : anime.episodeMinutes ? `${anime.episodeMinutes} min` : "Duration unknown"}</span></span>{episode <= entry.watchedEpisodes && <CheckCircle2 className="ml-auto text-[var(--primary)]" size={14} />}</button>;

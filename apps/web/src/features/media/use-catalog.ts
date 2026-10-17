@@ -64,19 +64,26 @@ export function useCatalogAnime(animeId: string) {
   return { anime, error: failure === animeId };
 }
 export function useCatalogEpisodes(animeId: string, enabled: boolean) {
-  const [result, setResult] = useState<{ id: string; numbers: number[] }>({ id: "", numbers: [] });
+  const [result, setResult] = useState<{ id: string; numbers: number[]; status: "ready" | "error" }>({ id: "", numbers: [], status: "ready" });
   useEffect(() => {
     if (!enabled) return;
     const controller = new AbortController();
-    fetch(`/api/anime/${encodeURIComponent(animeId)}/episodes`, { signal: controller.signal }).then(async (response) => {
-      if (!response.ok) return;
-      const data = await response.json();
-      if (!controller.signal.aborted && Array.isArray(data.episodes)) {
-        const numbers = data.episodes.map((item: { number?: unknown }) => item.number).filter((number: unknown): number is number => typeof number === "number" && Number.isSafeInteger(number) && number > 0 && number <= 10_000);
-        setResult({ id: animeId, numbers: [...new Set<number>(numbers)].sort((a, b) => a - b).slice(0, 2000) });
+    fetch(`/api/anime/${encodeURIComponent(animeId)}/available-episodes`, { signal: controller.signal }).then(async (response) => {
+      if (!response.ok) {
+        if (response.status === 404) {
+          if (!controller.signal.aborted) setResult({ id: animeId, numbers: [], status: "ready" });
+          return;
+        }
+        throw new Error("episodes_unavailable");
       }
-    }).catch(() => {});
+      const data = await response.json();
+      if (!Array.isArray(data.episodes)) throw new Error("invalid_episodes");
+      if (!controller.signal.aborted) {
+        const numbers = data.episodes.map((item: { number?: unknown }) => item.number).filter((number: unknown): number is number => typeof number === "number" && Number.isSafeInteger(number) && number > 0 && number <= 10_000);
+        setResult({ id: animeId, numbers: [...new Set<number>(numbers)].sort((a, b) => a - b).slice(0, 2000), status: "ready" });
+      }
+    }).catch(() => { if (!controller.signal.aborted) setResult({ id: animeId, numbers: [], status: "error" }); });
     return () => controller.abort();
   }, [animeId, enabled]);
-  return result.id === animeId ? result.numbers : [];
+  return result.id === animeId ? result : { numbers: [], status: enabled ? "loading" as const : "idle" as const };
 }

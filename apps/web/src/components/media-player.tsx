@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MediaResult } from "@/features/media/types";
 
 interface Props {
-  animeId: string; title: string; episode: number; initialPosition: number; imageUrl?: string;
+  animeId: string; title: string; episode: number; initialPosition: number; imageUrl?: string; providerLoading?: boolean;
   onPositionChange: (seconds: number, duration: number) => void; onComplete: () => void;
 }
 const messages: Record<string, string> = {
@@ -17,7 +17,7 @@ const messages: Record<string, string> = {
   source_expired: "This source has expired. Request a fresh source to continue.",
   media_not_configured: "Media delivery needs server configuration.",
 };
-export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl, onPositionChange, onComplete }: Props) {
+export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl, providerLoading = false, onPositionChange, onComplete }: Props) {
   const video = useRef<HTMLVideoElement>(null);
   const pending = useRef<AbortController | null>(null);
   const initial = useRef(initialPosition);
@@ -87,6 +87,8 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
     finally { if (!controller.signal.aborted) setLoading(false); }
   }
   const tracks = media?.subtitles.filter((track) => track.displaySupported) ?? [];
+  const isLoading = providerLoading || loading;
+  const loadingMessage = loading ? "Finding source…" : "Checking provider catalog…";
   return <section className="glass-panel overflow-hidden rounded-xl" aria-label={`${title} player`}>
     <div className="relative flex aspect-video items-center justify-center bg-black">
       {media ? <video ref={video} controls playsInline aria-label={`${title} episode ${episode}`} className="h-full w-full" poster={imageUrl}
@@ -98,8 +100,11 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
         }} onTimeUpdate={() => flush()} onPause={() => flush(true)} onSeeked={() => flush(true)} onEnded={() => flush(true)}
         onPlay={() => setNeedsPlay(false)} onError={() => setError("Playback failed or the source expired. Request a fresh source to retry.")}>
         {tracks.map((track, index) => <track key={`${track.language}-${index}`} kind="subtitles" src={track.url} srcLang={track.language} label={track.label} default={track.default} />)}
-      </video> : <div className="absolute inset-0 grid place-items-center bg-cover bg-center" style={imageUrl ? { backgroundImage: `linear-gradient(#0008,#000b), url("${imageUrl}")` } : undefined}>
-        <button type="button" disabled={loading} onClick={() => void resolve()} className="rounded-full bg-white px-6 py-3 font-bold text-black disabled:opacity-60">{loading ? "Finding source…" : "Play episode"}</button>
+      </video> : isLoading ? <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-white">
+        <span aria-hidden="true" className="h-8 w-8 animate-spin rounded-full border-2 border-white/35 border-t-white motion-reduce:animate-none" />
+        <span>{loadingMessage}</span>
+      </div> : <div className="absolute inset-0 grid place-items-center bg-cover bg-center" style={imageUrl ? { backgroundImage: `linear-gradient(#0008,#000b), url("${imageUrl}")` } : undefined}>
+        <button type="button" onClick={() => void resolve()} className="rounded-full bg-white px-6 py-3 font-bold text-black">Play episode</button>
       </div>}
     </div>
     <div className="space-y-3 p-4 text-sm">

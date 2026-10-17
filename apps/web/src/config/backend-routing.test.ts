@@ -8,6 +8,7 @@ describe("Nest API routing", () => {
     expect(routes).toContainEqual({ source: "/api/anime/:animeId/episodes", destination: "https://api.sabame.test/api/anime/:animeId/episodes" });
     expect(backendPaths).not.toContain("/api/:path*");
     expect(backendPaths.some((path) => path.includes("media"))).toBe(false);
+    expect(routes.map(({ source }) => source)).not.toContain("/api/anime/:animeId/available-episodes");
   });
   it("allows local development but never defaults a deployed environment to localhost", () => {
     expect(backendRewrites(undefined)[0].destination).toContain("http://127.0.0.1:4000/");

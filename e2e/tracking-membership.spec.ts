@@ -21,7 +21,7 @@ test("unlisted playback stays local through refresh until an explicit MAL add", 
   await page.route("**/api/mal/list", (route) => route.fulfill({ json: snapshot() }));
   await page.route("**/api/mal/import", (route) => route.fulfill({ json: snapshot() }));
   await page.route(`**/api/anime/${anime.id}`, (route) => route.fulfill({ json: anime }));
-  await page.route(`**/api/anime/${anime.id}/episodes`, (route) => route.fulfill({ json: { episodes: [{ number: 1 }, { number: 2 }, { number: 3 }] } }));
+  await page.route(`**/api/anime/${anime.id}/available-episodes`, (route) => route.fulfill({ json: { episodes: [{ number: 1 }, { number: 2 }, { number: 3 }] } }));
   const video = await readFile("e2e/fixtures/player.mp4");
   await page.route("**/fixture/membership-player.mp4", (route) => {
     const range = route.request().headers().range?.match(/^bytes=(\d+)-(\d*)$/);
