@@ -148,7 +148,7 @@ export class MalClient {
       if (Date.now() > deadline) throw new MalError("import_timeout", 504);
       const payload = object(
         await this.call(
-          `/users/@me/animelist?${new URLSearchParams({ fields: FIELDS, limit: "100", offset: String(offset) })}`,
+          `/users/@me/animelist?${new URLSearchParams({ fields: FIELDS, limit: "100", offset: String(offset), nsfw: "true" })}`,
         ),
       );
       if (!Array.isArray(payload.data))
