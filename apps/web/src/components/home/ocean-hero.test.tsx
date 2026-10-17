@@ -32,11 +32,14 @@ describe("OceanHero", () => {
     expect(scene).toHaveAttribute("aria-hidden", "true");
     expect(screen.getAllByTestId("ocean-card")).toHaveLength(3);
     expect(screen.getByTestId("ocean-waves")).toBeInTheDocument();
-    expect(screen.getAllByTestId("ocean-fish")).toHaveLength(2);
+    expect(screen.getAllByTestId("ocean-fish")).toHaveLength(7);
     for (const fish of screen.getAllByTestId("ocean-fish")) {
       expect(fish.closest('[aria-hidden="true"]')).not.toBeNull();
       expect(fish.querySelector("img")).toHaveAttribute("alt", "");
     }
+    const bubbles = screen.getByTestId("ocean-hero-bubbles");
+    expect(bubbles).toHaveAttribute("aria-hidden", "true");
+    expect(bubbles.querySelectorAll('[data-testid="ocean-bubble"]')).toHaveLength(7);
   });
 
   it("has no motion control and pauses automatically when the document is hidden", () => {

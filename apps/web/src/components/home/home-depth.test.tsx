@@ -16,6 +16,11 @@ describe("HomeDepth", () => {
       "id",
       "features",
     );
+    const bubbles = screen.getByTestId("ocean-depth-bubbles");
+    expect(bubbles).toHaveAttribute("aria-hidden", "true");
+    expect(bubbles.querySelectorAll('[data-testid="ocean-bubble"]')).toHaveLength(6);
+    expect(screen.getAllByTestId("ocean-fish")).toHaveLength(3);
+    expect(screen.getAllByTestId("ocean-fish")[0]?.closest('[aria-hidden="true"]')).not.toBeNull();
     expect(screen.getByText("Less keeping track. More getting lost.")).toBeInTheDocument();
 
     const articles = screen.getAllByRole("article");

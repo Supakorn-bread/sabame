@@ -1,0 +1,88 @@
+.ocean-bubbles {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ocean-bubbles--depth {
+  z-index: 0;
+}
+
+.ocean-bubbles--hero {
+  clip-path: inset(var(--ocean-waterline) 0 0);
+}
+
+.ocean-bubbles__bubble {
+  position: absolute;
+  top: calc(var(--ocean-waterline) + var(--ocean-bubble-depth));
+  left: var(--ocean-bubble-left);
+  width: var(--ocean-bubble-size);
+  aspect-ratio: 1;
+  border: 1px solid rgb(226 251 255 / 58%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 32% 25%,
+    rgb(247 255 255 / 66%),
+    rgb(139 232 246 / 13%) 38%,
+    rgb(111 222 242 / 4%) 72%
+  );
+  box-shadow:
+    inset 0 0 4px rgb(231 254 255 / 32%),
+    0 0 7px rgb(131 226 244 / 16%);
+  opacity: 0;
+  animation: ocean-bubble-rise var(--ocean-bubble-duration) ease-in-out
+    var(--ocean-bubble-delay) infinite;
+}
+
+.ocean-bubbles--depth .ocean-bubbles__bubble {
+  top: var(--ocean-bubble-depth);
+  border-color: rgb(184 238 249 / 48%);
+  background: radial-gradient(
+    circle at 32% 25%,
+    rgb(235 254 255 / 54%),
+    rgb(101 217 239 / 12%) 38%,
+    rgb(82 201 228 / 3%) 72%
+  );
+  box-shadow:
+    inset 0 0 4px rgb(215 251 255 / 28%),
+    0 0 9px rgb(86 208 233 / 14%);
+}
+
+@keyframes ocean-bubble-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.76);
+  }
+
+  18% {
+    opacity: var(--ocean-bubble-opacity);
+  }
+
+  80% {
+    opacity: var(--ocean-bubble-opacity);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--ocean-bubble-drift), -205px, 0) scale(1.08);
+  }
+}
+
+@media (max-width: 767px) {
+  .ocean-bubbles--hero .ocean-bubbles__bubble--d,
+  .ocean-bubbles--hero .ocean-bubbles__bubble--f,
+  .ocean-bubbles--depth .ocean-bubbles__bubble--b,
+  .ocean-bubbles--depth .ocean-bubbles__bubble--d {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ocean-bubbles__bubble {
+    animation: none;
+    opacity: calc(var(--ocean-bubble-opacity) * 0.72);
+    transform: none;
+  }
+}

@@ -53,6 +53,26 @@
   margin-inline: auto;
 }
 
+.features :global(.ocean-fish__swimmer--depth-a),
+.features :global(.ocean-fish__swimmer--depth-c) {
+  top: 12px;
+}
+
+.features :global(.ocean-fish__swimmer--depth-a) {
+  left: min(4%, calc(100% - var(--ocean-fish-width) - var(--ocean-fish-distance) - 16px));
+}
+
+.features :global(.ocean-fish__swimmer--depth-c) {
+  left: min(88%, calc(100% - var(--ocean-fish-width) - var(--ocean-fish-distance) - 16px));
+}
+
+.features :global(.ocean-fish__swimmer--depth-b) {
+  top: auto;
+  right: auto;
+  bottom: 12px;
+  left: min(88%, calc(100% - var(--ocean-fish-width) - var(--ocean-fish-distance) - 16px));
+}
+
 .intro {
   max-width: 48rem;
   margin: 0 auto;

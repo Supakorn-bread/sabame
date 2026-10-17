@@ -5,6 +5,15 @@
   pointer-events: none;
 }
 
+.ocean-fish--depth {
+  z-index: 0;
+}
+
+.ocean-fish[data-variant="school"] .ocean-fish__swimmer,
+.ocean-fish[data-variant="depth"] .ocean-fish__swimmer {
+  opacity: 0.65;
+}
+
 .ocean-fish__swimmer {
   --swim-distance: 82px;
   position: absolute;
@@ -24,9 +33,44 @@
   animation-delay: -16s;
 }
 
+.ocean-fish__swimmer--school {
+  top: calc(var(--ocean-waterline) + var(--ocean-fish-depth));
+  left: var(--ocean-fish-left);
+  width: var(--ocean-fish-width);
+  --swim-distance: var(--ocean-fish-distance);
+  animation-duration: var(--ocean-fish-duration);
+  animation-delay: var(--ocean-fish-delay);
+}
+
+.ocean-fish__swimmer--depth {
+  top: var(--ocean-fish-top);
+  left: var(--ocean-fish-left);
+  width: var(--ocean-fish-width);
+  --swim-distance: var(--ocean-fish-distance);
+  animation-duration: var(--ocean-fish-duration);
+  animation-delay: var(--ocean-fish-delay);
+}
+
+.ocean-fish__swimmer--school,
+.ocean-fish__swimmer--depth {
+  left: min(
+    var(--ocean-fish-left),
+    calc(100% - var(--ocean-fish-width) - var(--ocean-fish-distance) - 16px)
+  );
+}
+
+.ocean-fish[data-variant="depth"] .ocean-fish__swimmer--depth {
+  width: min(var(--ocean-fish-width), 48px);
+}
+
 .ocean-fish__body {
   animation: ocean-fish-turn 32s ease-in-out infinite;
   animation-delay: inherit;
+}
+
+.ocean-fish__swimmer--school .ocean-fish__body,
+.ocean-fish__swimmer--depth .ocean-fish__body {
+  animation-duration: var(--ocean-fish-duration);
 }
 
 .ocean-fish__art {
@@ -40,6 +84,12 @@
 .dark .ocean-fish__art {
   opacity: 0.63;
   filter: brightness(0.58) saturate(0.7) drop-shadow(0 2px 12px rgb(105 184 223 / 18%));
+}
+
+.ocean-fish[data-variant="school"] .ocean-fish__art,
+.ocean-fish[data-variant="depth"] .ocean-fish__art {
+  opacity: 0.85;
+  filter: brightness(0.9) saturate(0.8) drop-shadow(0 4px 12px rgb(15 118 152 / 16%));
 }
 
 @keyframes ocean-fish-swim {
@@ -65,6 +115,61 @@
   .ocean-fish__swimmer--far {
     display: none;
   }
+
+  .ocean-fish__swimmer--school-a,
+  .ocean-fish__swimmer--school-b,
+  .ocean-fish__swimmer--school-c,
+  .ocean-fish__swimmer--school-d {
+    display: none;
+  }
+
+  .ocean-fish__swimmer--school {
+    --swim-distance: 28px;
+    top: calc(100% - 160px);
+    width: min(var(--ocean-fish-width), 48px);
+  }
+
+  .ocean-fish__swimmer--school-e { left: 10%; }
+  .ocean-fish__swimmer--school-f { left: 42%; }
+  .ocean-fish__swimmer--school-g { left: 75%; }
+}
+
+@media (min-width: 64rem) {
+  .ocean-fish__swimmer--school {
+    width: min(var(--ocean-fish-width), 52px);
+  }
+
+  .ocean-fish__swimmer--school-a,
+  .ocean-fish__swimmer--school-c,
+  .ocean-fish__swimmer--school-g {
+    top: calc(100% - 215px);
+  }
+
+  .ocean-fish__swimmer--school-b,
+  .ocean-fish__swimmer--school-d,
+  .ocean-fish__swimmer--school-e,
+  .ocean-fish__swimmer--school-f {
+    top: calc(100% - 150px);
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  .ocean-fish__swimmer--school-a,
+  .ocean-fish__swimmer--school-b,
+  .ocean-fish__swimmer--school-c,
+  .ocean-fish__swimmer--school-d {
+    display: none;
+  }
+
+  .ocean-fish__swimmer--school {
+    --swim-distance: 28px;
+    top: calc(100% - 160px);
+    width: min(var(--ocean-fish-width), 48px);
+  }
+
+  .ocean-fish__swimmer--school-e { left: 10%; }
+  .ocean-fish__swimmer--school-f { left: 42%; }
+  .ocean-fish__swimmer--school-g { left: 75%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

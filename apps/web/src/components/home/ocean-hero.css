@@ -681,6 +681,18 @@
   }
 }
 
+@media (max-width: 63.999rem) {
+  .ocean-home > main > .ocean-hero {
+    --ocean-waterline: calc(100% - 360px);
+  }
+}
+
+@media (min-width: 48rem) and (max-width: 63.999rem) {
+  .ocean-home > main > .ocean-hero .ocean-hero__poster {
+    top: calc(var(--ocean-waterline) - 60px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ocean-hero *,
   .ocean-hero *::before,

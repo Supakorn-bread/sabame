@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties }
 
 import { AnimeArtwork } from "@/components/ui/anime-artwork";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
+import { OceanBubbles } from "./ocean-bubbles";
 import { OceanFish } from "./ocean-fish";
 import { OceanWaterEffects } from "./ocean-water-effects";
 
@@ -123,7 +124,8 @@ export function OceanHero() {
         aria-hidden="true"
       >
         <OceanWaterEffects paused={motionPaused} onCanvasReady={setCanvasReady} />
-        <OceanFish />
+        <OceanBubbles variant="hero" />
+        <OceanFish variant="school" />
         {heroPosters.map((anime, index) => {
           const poster = posterSlots[index];
           if (!poster) return null;

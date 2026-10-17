@@ -1,6 +1,8 @@
 import { Bookmark, CalendarDays, Play } from "lucide-react";
 import Link from "next/link";
 
+import { OceanBubbles } from "./ocean-bubbles";
+import { OceanFish } from "./ocean-fish";
 import styles from "./home-depth.module.css";
 
 const features = [
@@ -28,6 +30,8 @@ export function HomeDepth() {
       className={styles.features}
       aria-labelledby="features-title"
     >
+      <OceanBubbles variant="depth" />
+      <OceanFish variant="depth" />
       <div className={styles.content}>
         <header className={styles.intro}>
           <p className={styles.eyebrow}>Less keeping track. More getting lost.</p>
