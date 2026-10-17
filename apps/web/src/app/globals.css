@@ -140,16 +140,26 @@ button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
 }
 .library-glass-details {
   color: var(--text);
-  background: color-mix(in srgb, var(--bg) 84%, transparent);
-  border: 1px solid var(--border-strong);
-  border-radius: inherit;
-  -webkit-backdrop-filter: blur(20px) saturate(125%);
-  backdrop-filter: blur(20px) saturate(125%);
+  border: 0;
+  border-radius: 0;
   opacity: 0;
   visibility: hidden;
   transform: translateY(12px);
   transition: opacity 200ms ease-out, transform 220ms cubic-bezier(.2,.8,.2,1), visibility 220ms;
 }
+.library-glass-details::before {
+  content: "";
+  position: absolute;
+  inset: -16px 0 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+  backdrop-filter: blur(20px) saturate(125%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+  pointer-events: none;
+}
+.library-glass-details select { font-size: 0.75rem; }
 .library-glass-details[data-open="true"] {
   opacity: 1;
   visibility: visible;

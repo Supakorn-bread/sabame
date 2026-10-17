@@ -26,7 +26,11 @@ test("library covers reveal glass details on hover and support keyboard dismissa
   expect(panelBox!.height / box!.height).toBeCloseTo(0.5, 1);
   await expect(card.getByRole("button", { name: /Close details/ })).toHaveCount(0);
   expect(await panel.evaluate((el) => [el, ...el.querySelectorAll("*")].every((node) => !["auto", "scroll"].includes(getComputedStyle(node).overflowY)))).toBe(true);
-  expect(await panel.evaluate((el) => getComputedStyle(el).backdropFilter)).toContain("blur");
+  expect(await panel.evaluate((el) => getComputedStyle(el, "::before").backdropFilter)).toContain("blur");
+  await expect(panel).toHaveCSS("border-top-left-radius", "0px");
+  await expect(panel).toHaveCSS("border-top-right-radius", "0px");
+  expect(await panel.evaluate((el) => getComputedStyle(el, "::before").maskImage)).toContain("linear-gradient");
+  await expect(card.getByRole("combobox")).toHaveCSS("font-size", "12px");
   await page.screenshot({ path: "test-results/library-glass-hover.png", fullPage: true });
   const beforeScroll = await page.evaluate(() => window.scrollY);
   await panel.hover();
