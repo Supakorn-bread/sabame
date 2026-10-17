@@ -36,7 +36,7 @@ export async function api(request: Request, run: (signal: AbortSignal, requestId
         : code === "invalid_ticket" ? 403
           : code === "source_expired" ? 410
             : code === "mapping_required" ? 409
-              : code === "timeout" ? 504
+              : code === "timeout" || code === "resource_timeout" ? 504
                 : 502;
     return json({ error: { code, requestId } }, status);
   }

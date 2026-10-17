@@ -14,6 +14,7 @@ const messages: Record<string, string> = {
   upstream_unavailable: "The video provider is temporarily unavailable. Please retry shortly.",
   provider_unavailable: "The video provider is temporarily unavailable. Please retry shortly.",
   timeout: "Finding a source took too long. Please retry.",
+  resource_timeout: "The video source took too long to respond. Try again.",
   english_subtitle_unavailable: "This source has no usable English subtitles. Try another episode or try again later.",
   mapping_required: "This title or season could not be matched safely. Try another title.",
   no_source: "No playable source is available for this title or season from the current providers. Being in your MAL list does not guarantee video availability.",

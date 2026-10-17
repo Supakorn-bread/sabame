@@ -7,8 +7,16 @@ import { allowedHosts, isPublicAddress, resourceReferer, validateResourceUrl, ty
 
 export interface ResourceBody { body: Buffer; status: number; headers: IncomingHttpHeaders; url: string }
 interface ResourceOptions { maxBytes?: number; range?: string; redirects?: number; policy?: DeliveryPolicyId }
-/** DNS is validated on every redirect and pinned in the actual TLS connection. */
 export async function fetchResource(value: string, signal: AbortSignal, options: ResourceOptions = {}): Promise<ResourceBody> {
+  try { return await fetchResourceAttempt(value, signal, options); }
+  catch (error) {
+    signal.throwIfAborted();
+    if (!(error instanceof MediaError) || error.code !== "resource_timeout") throw error;
+    return fetchResourceAttempt(value, signal, options);
+  }
+}
+/** DNS is validated on every redirect and pinned in the actual TLS connection. */
+async function fetchResourceAttempt(value: string, signal: AbortSignal, options: ResourceOptions): Promise<ResourceBody> {
   signal.throwIfAborted();
   const policy = options.policy ?? "default";
   const url = validateResourceUrl(value, allowedHosts(policy));
@@ -43,7 +51,7 @@ export async function fetchResource(value: string, signal: AbortSignal, options:
   });
   if (result.status >= 300) {
     if ((options.redirects ?? 0) >= 3 || !result.headers.location) throw new MediaError("redirect_limit");
-    return fetchResource(new URL(result.headers.location, url).href, signal, { ...options, redirects: (options.redirects ?? 0) + 1 });
+    return fetchResourceAttempt(new URL(result.headers.location, url).href, signal, { ...options, redirects: (options.redirects ?? 0) + 1 });
   }
   return result;
 }

@@ -284,6 +284,7 @@ describe("real media player", () => {
     ["upstream_unavailable", "The video provider is temporarily unavailable"],
     ["provider_unavailable", "The video provider is temporarily unavailable"],
     ["timeout", "Finding a source took too long"],
+    ["resource_timeout", "The video source took too long"],
     ["english_subtitle_unavailable", "no usable English subtitles"],
     ["no_source", "No playable source is available for this title"],
   ])("explains %s without conflating an outage with a missing title", async (code, message) => {

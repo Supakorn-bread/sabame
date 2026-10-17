@@ -6,6 +6,7 @@ vi.mock("./providers", () => ({ mediaProviders: [{ id: "animeparadise", resolve:
 vi.mock("./delivery", () => ({ prepareDelivery: (result: unknown) => result, probeSubtitle: vi.fn(async () => "vtt"), validateVideo: vi.fn(async () => {}) }));
 import { POST } from "@/app/api/anime/[animeId]/media/route";
 import { mediaProviders } from "./providers";
+import { MediaError } from "../types";
 
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
@@ -36,4 +37,12 @@ it("gives fallback only the remaining overall budget after a slow primary failur
   expect(response.status).toBe(504);
   expect(fallbackSignal?.aborted).toBe(true);
   expect(await response.json()).toMatchObject({ error: { code: "timeout" } });
+});
+
+it("reports an exhausted resource timeout as a gateway timeout", async () => {
+  vi.spyOn(console, "info").mockImplementation(() => {});
+  for (const provider of mediaProviders) vi.mocked(provider.resolve).mockRejectedValue(new MediaError("resource_timeout"));
+  const response = await POST(new Request("https://sabame.test/api/anime/mal-2890/media", { method: "POST", body: JSON.stringify({ episodeNumber: 1 }) }), { params: Promise.resolve({ animeId: "mal-2890" }) });
+  expect(response.status).toBe(504);
+  expect(await response.json()).toMatchObject({ error: { code: "resource_timeout" } });
 });
