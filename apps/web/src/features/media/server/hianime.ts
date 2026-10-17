@@ -129,7 +129,7 @@ export const hianimeAdapter: MediaProvider = {
     if (video.origin !== "https://hls.dramahot.top" || !video.pathname.endsWith(".m3u8") || video.username || video.password) throw new MediaError("resource_host_not_allowed");
     const subtitles = (Array.isArray(config.subtitles) ? config.subtitles : []).flatMap((value) => {
       const track = record(value);
-      if (typeof track.src !== "string" || typeof track.label !== "string" || normalizeLanguage(track.label) !== "en" || track.lang !== "en") return [];
+      if (typeof track.src !== "string" || typeof track.label !== "string" || normalizeLanguage(track.label.split(" - ", 1)[0]) !== "en" || track.lang !== "en") return [];
       const url = new URL(track.src);
       if (url.origin !== "https://hls.dramahot.top" || !url.pathname.endsWith(".vtt") || url.username || url.password) throw new MediaError("resource_host_not_allowed");
       return [{ url: url.href, language: "en", label: track.label, format: "vtt" as const }];
