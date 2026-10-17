@@ -8,6 +8,7 @@ import { useTrackerStore } from "@/features/tracker/store";
 import { currentSeason, isSeason, seasonLabel, validSeasonYear, type SeasonSelection } from "@/features/seasonal/model";
 import { AppShell } from "@/components/layout/app-shell";
 import { ScheduleCalendar, type CalendarView } from "./schedule-calendar";
+import { ScheduleSkeleton } from "./schedule-skeleton";
 import {
   calendarDateInTimeZone,
   displayTime,
@@ -457,7 +458,7 @@ export function ScheduleBrowser() {
         })}
       </section>
 
-      <section id="schedule-day" aria-labelledby="schedule-day-heading" className="min-h-[360px] rounded-2xl border border-[var(--border)] bg-[var(--bg-lowest)] p-4 sm:p-6 lg:p-8">
+      <section id="schedule-day" aria-labelledby="schedule-day-heading" aria-busy={loading} className="min-h-[360px] rounded-2xl border border-[var(--border)] bg-[var(--bg-lowest)] p-4 sm:p-6 lg:p-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="eyebrow mb-2 text-[var(--primary)]">{timezoneLabel}</p>
@@ -468,7 +469,7 @@ export function ScheduleBrowser() {
           </p>
         </div>
 
-        {loading ? <div aria-hidden="true" className="grid gap-3 md:grid-cols-2">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-xl bg-[var(--bg-low)] motion-reduce:animate-none" />)}</div> : null}
+        {loading ? <ScheduleSkeleton view={activeView} /> : null}
 
         {error ? (
           <div role="alert" className="rounded-xl border border-[var(--border-strong)] bg-[var(--bg-low)] p-6 sm:p-8">

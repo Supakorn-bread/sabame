@@ -240,3 +240,45 @@ test("calendar groups exact minutes and keeps portal details within the viewport
   await expect(dialog).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
+
+test("loading placeholders match Week and Day layouts and dropdown arrows have spacing", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.clock.setFixedTime(new Date("2026-09-23T05:00:00Z"));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let releaseSchedule = () => {};
+  const scheduleReady = new Promise<void>((resolve) => { releaseSchedule = resolve; });
+  await page.route("**/api/schedule?*", async (route) => {
+    await scheduleReady;
+    await route.fulfill({ json: { state: "ready", season: { year: 2026, season: "summer" }, matchedAnimeCount: 1, items: [] } });
+  });
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Try demo instantly" }).click();
+  await page.goto("/schedule");
+
+  const panel = page.locator("#schedule-day");
+  const week = page.locator('[data-schedule-skeleton="week"]');
+  const day = page.locator('[data-schedule-skeleton="day"]');
+  await expect(panel).toHaveAttribute("aria-busy", "true");
+  await expect(week).toBeVisible();
+  await expect(week.locator("thead th")).toHaveCount(8);
+  await expect(week.locator("tbody td")).toHaveCount(21);
+  expect((await week.boundingBox())!.height).toBeGreaterThan(600);
+  const zone = page.getByRole("combobox", { name: "Broadcast time zone" });
+  await expect(zone).toHaveCSS("padding-right", "40px");
+  await expect(zone).toHaveCSS("background-position", "calc(100% - 14px) 50%");
+
+  await page.getByRole("button", { name: "Day", exact: true }).click();
+  await expect(day).toBeVisible();
+  await expect(week).toHaveCount(0);
+  await page.getByRole("button", { name: "Week", exact: true }).click();
+  await expect(week).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(day).toBeVisible();
+  await expect(week).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+
+  releaseSchedule();
+  await expect(panel).toHaveAttribute("aria-busy", "false");
+  await expect(day).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "No broadcasts listed for this day" })).toBeVisible();
+});
