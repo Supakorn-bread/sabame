@@ -3,12 +3,12 @@ import { isThaiSubtitle, normalizeLanguage } from "./language";
 import { resolveMedia } from "./resolver";
 import { detectSubtitleFormat, toWebVtt } from "./subtitles";
 import { exactEpisode, normalizeTitle } from "./identity";
-import { MediaError, type MediaProvider, type RawSubtitle } from "./types";
+import { MediaError, type MediaProvider, type RawSubtitle, type SubtitleFormat } from "./types";
 
 const episode = { animeId: "mal-1", episodeNumber: 1 };
 const track = (language: string): RawSubtitle => ({ language, label: language, url: `https://example.com/${language}.vtt` });
 const provider = (id: string, subtitles?: RawSubtitle[]): MediaProvider => ({ id, resolve: vi.fn(async () => ({ video: { url: `https://example.com/${id}.m3u8`, type: "hls" as const }, subtitles })) });
-const options = () => ({ signal: new AbortController().signal, probeSubtitle: vi.fn(async () => "vtt" as const), validateVideo: vi.fn(async () => {}) });
+const options = () => ({ signal: new AbortController().signal, probeSubtitle: vi.fn(async (): Promise<SubtitleFormat> => "vtt"), validateVideo: vi.fn(async () => {}) });
 
 describe("subtitle language normalization", () => {
   it.each(["Thai", "thai", "TH", "th", "tha", "th-TH", "th_TH", "ภาษาไทย"])("recognizes %s", (value) => {
@@ -19,11 +19,11 @@ describe("subtitle language normalization", () => {
   it.each(["Theatre", "The best", "Thames", "other", "", undefined, 42])("does not infer Thai from %s", (value) => expect(normalizeLanguage(value)).toBe("und"));
 });
 describe("episode-specific provider fallback", () => {
-  it("selects video + Thai and stops remaining providers", async () => {
+  it("selects video + English and stops remaining providers", async () => {
     const spare = provider("unused", []);
-    const result = await resolveMedia(episode, [provider("english", [track("en")]), provider("thai", [track("Thai")]), spare], options());
-    expect(result).toMatchObject({ provider: "thai", thaiStatus: "present", selectionReason: "thai_subtitle" });
-    expect(result.subtitles[0]).toMatchObject({ language: "th", default: true, syncStatus: "unverified" });
+    const result = await resolveMedia(episode, [provider("thai", [track("Thai")]), provider("english", [track("en")]), spare], options());
+    expect(result).toMatchObject({ provider: "english", thaiStatus: "absent_in_returned_tracks", selectionReason: "english_subtitle" });
+    expect(result.subtitles[0]).toMatchObject({ language: "en", default: true, syncStatus: "unverified" });
     expect(spare.resolve).not.toHaveBeenCalled();
     expect(result.subtitles).toHaveLength(1); // No cross-provider merge.
   });
@@ -33,6 +33,13 @@ describe("episode-specific provider fallback", () => {
   it("preserves multiple languages and only one default", async () => {
     const result = await resolveMedia(episode, [provider("multi", [track("en"), track("th"), track("ja")])], options());
     expect(result.subtitles).toHaveLength(3);
+    expect(result.subtitles.filter((item) => item.default).map((item) => item.language)).toEqual(["en"]);
+  });
+  it("falls back to displayable Thai when English cannot be displayed", async () => {
+    const opts = options();
+    opts.probeSubtitle.mockResolvedValueOnce("ass").mockResolvedValueOnce("vtt");
+    const result = await resolveMedia(episode, [provider("multi", [track("en"), track("th")])], opts);
+    expect(result.selectionReason).toBe("thai_subtitle");
     expect(result.subtitles.filter((item) => item.default).map((item) => item.language)).toEqual(["th"]);
   });
   it("distinguishes empty tracks from missing subtitle data", async () => {

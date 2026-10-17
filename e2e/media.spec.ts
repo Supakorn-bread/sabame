@@ -23,7 +23,7 @@ function media(episodeNumber: number) {
   return { provider: "test-fixture", video: { url: "/fixture/player.mp4", type: "mp4" }, metadata: { animeId: anime.id, episodeNumber },
     thaiStatus: "present", selectionReason: "thai_subtitle", subtitles: ["th", "en"].map((language) => ({ language, label: language === "th" ? "Thai" : "English", url: `/fixture/${language}.vtt`, format: "vtt", default: language === "th", availability: "available", displaySupported: true, syncStatus: "unverified" })) };
 }
-test("remote search → selected episode → real video + Thai controls → persisted resume", async ({ page }) => {
+test("remote search → selected episode → real video + English subtitle default → persisted resume", async ({ page }) => {
   await setup(page);
   const requested: number[] = [];
   await page.route(`**/api/anime/${anime.id}/media`, (route) => {
@@ -43,9 +43,11 @@ test("remote search → selected episode → real video + Thai controls → pers
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(0);
   await video.evaluate((element: HTMLVideoElement) => element.pause());
   expect(requested).toEqual([2]);
-  await expect(page.getByRole("combobox", { name: "Subtitles" })).toHaveValue("0");
-  await page.getByRole("combobox", { name: "Subtitles" }).selectOption("1");
+  await expect(page.getByRole("combobox", { name: "Subtitles" })).toHaveValue("1");
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.textTracks[1]?.mode)).toBe("showing");
+  expect(await video.getAttribute("src")).toBe("/fixture/player.mp4");
+  await page.getByRole("combobox", { name: "Subtitles" }).selectOption("0");
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.textTracks[0]?.mode)).toBe("showing");
   await page.getByRole("combobox", { name: "Subtitles" }).selectOption("off");
   await video.evaluate((element: HTMLVideoElement) => { element.currentTime = 1.5; });
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => JSON.stringify({ entry: JSON.parse(localStorage.getItem("sabame:v1")!).state.demoLibrary["mal-999999"], position: element.currentTime, duration: element.duration, seeking: element.seeking, ready: element.readyState }))).toContain('"playbackSeconds":1');
@@ -63,6 +65,25 @@ test("remote search → selected episode → real video + Thai controls → pers
   expect(requested).toEqual([2, 2]);
   await page.getByRole("button", { name: "Mark episode complete" }).click();
   await expect(page.getByRole("status").filter({ hasText: "3 episodes watched" })).toBeVisible();
+});
+test("video end marks the current episode complete", async ({ page }) => {
+  await setup(page);
+  await page.route(`**/api/anime/${anime.id}/media`, (route) => route.fulfill({ json: media(1) }));
+  await page.goto("/search");
+  await page.locator("main").getByRole("combobox", { name: "Search anime" }).fill("Fixture");
+  await page.getByRole("option", { name: /Sabame Fixture Story/ }).click();
+  await page.getByRole("button", { name: "Play episode" }).click();
+  const video = page.locator("video");
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.readyState)).toBeGreaterThan(0);
+  await video.evaluate(async (element: HTMLVideoElement) => {
+    element.pause();
+    element.currentTime = element.duration - 0.1;
+    element.playbackRate = 8;
+    await element.play();
+  });
+  await expect(page.getByText("1 / 3", { exact: true })).toBeVisible();
+  await expect(video).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Play episode" })).toBeVisible();
 });
 test("mobile catalog and media failure remain accessible and can retry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

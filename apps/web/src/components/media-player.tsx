@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { normalizeLanguage } from "@/features/media/language";
 import type { MediaResult } from "@/features/media/types";
 
 interface Props {
@@ -22,6 +23,7 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
   const pending = useRef<AbortController | null>(null);
   const initial = useRef(initialPosition);
   const report = useRef(onPositionChange);
+  const completedEpisode = useRef<{ animeId: string; episode: number } | null>(null);
   const lastWrite = useRef(0);
   const [media, setMedia] = useState<MediaResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +37,14 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
     if (!element || !Number.isFinite(element.duration) || element.duration <= 0) return;
     if (force || Date.now() - lastWrite.current >= 5000) { report.current(element.currentTime, element.duration); lastWrite.current = Date.now(); }
   }, []);
+  const mediaMatchesEpisode = media?.metadata.animeId === animeId && media.metadata.episodeNumber === episode;
+  const completeCurrentEpisode = useCallback((fromPlayback = false) => {
+    if (fromPlayback && !mediaMatchesEpisode) return;
+    if (completedEpisode.current?.animeId === animeId && completedEpisode.current.episode === episode) return;
+    if (mediaMatchesEpisode) flush(true);
+    completedEpisode.current = { animeId, episode };
+    onComplete();
+  }, [animeId, episode, flush, mediaMatchesEpisode, onComplete]);
   useEffect(() => () => pending.current?.abort(), []);
   useEffect(() => {
     if (!media) return;
@@ -80,7 +90,10 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
       if (!response.ok) throw new Error(messages[data.error?.code] ?? "No playable source is available right now. Please retry later.");
       if (!controller.signal.aborted) {
         const result = data as MediaResult;
-        const preferred = result.subtitles.filter((track) => track.displaySupported).findIndex((track) => track.default);
+        const supported = result.subtitles.filter((track) => track.displaySupported);
+        const preferredEnglish = supported.findIndex((track) => normalizeLanguage(track.language) === "en");
+        const providerDefault = supported.findIndex((track) => track.default);
+        const preferred = preferredEnglish >= 0 ? preferredEnglish : providerDefault;
         setSubtitle(preferred >= 0 ? String(preferred) : "off"); setMedia(result);
       }
     } catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : "Unable to load media."); }
@@ -97,9 +110,9 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
           if (!element || !Number.isFinite(element.duration)) return;
           element.currentTime = Math.min(initial.current, Math.max(0, element.duration - 0.1));
           void element.play().catch(() => setNeedsPlay(true));
-        }} onTimeUpdate={() => flush()} onPause={() => flush(true)} onSeeked={() => flush(true)} onEnded={() => flush(true)}
+        }} onTimeUpdate={() => flush()} onPause={() => flush(true)} onSeeked={() => flush(true)} onEnded={() => completeCurrentEpisode(true)}
         onPlay={() => setNeedsPlay(false)} onError={() => setError("Playback failed or the source expired. Request a fresh source to retry.")}>
-        {tracks.map((track, index) => <track key={`${track.language}-${index}`} kind="subtitles" src={track.url} srcLang={track.language} label={track.label} default={track.default} />)}
+        {tracks.map((track, index) => <track key={`${track.language}-${index}`} kind="subtitles" src={track.url} srcLang={track.language} label={track.label} default={String(index) === subtitle} />)}
       </video> : isLoading ? <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-white">
         <span aria-hidden="true" className="h-8 w-8 animate-spin rounded-full border-2 border-white/35 border-t-white motion-reduce:animate-none" />
         <span>{loadingMessage}</span>
@@ -117,7 +130,7 @@ export function MediaPlayer({ animeId, title, episode, initialPosition, imageUrl
         <p className="text-xs text-[var(--text-soft)]">Subtitle timing has not been verified against this video.</p>
       </>}
       {(error || media) && <button type="button" disabled={loading} onClick={() => void resolve()} className="mr-3 rounded border px-4 py-2">Request fresh source</button>}
-      <button type="button" onClick={() => { flush(true); onComplete(); }} className="rounded border px-4 py-2">Mark episode complete</button>
+      <button type="button" onClick={() => completeCurrentEpisode()} className="rounded border px-4 py-2">Mark episode complete</button>
     </div>
   </section>;
 }

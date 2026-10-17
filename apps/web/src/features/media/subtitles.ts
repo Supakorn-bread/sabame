@@ -28,8 +28,8 @@ export async function resolveSubtitles(raw: RawSubtitle[] | undefined, probe: Su
       format, availability, displaySupported: availability === "available" && (format === "vtt" || format === "srt"),
       default: false, syncStatus: "unverified" };
   }));
-  const preferred = tracks.find((t) => t.language === "th" && t.displaySupported)
-    ?? tracks.find((t) => t.language === "en" && t.displaySupported);
+  const preferred = tracks.find((t) => t.language === "en" && t.displaySupported)
+    ?? tracks.find((t) => t.language === "th" && t.displaySupported);
   if (preferred) preferred.default = true;
   return tracks;
 }

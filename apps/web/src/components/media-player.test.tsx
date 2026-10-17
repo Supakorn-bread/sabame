@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MediaPlayer } from "./media-player";
+import { createTrackerStore } from "@/features/tracker/store";
 import type { MediaResult } from "@/features/media/types";
 
 const result: MediaResult = { provider: "fixture", video: { url: "/fixture.mp4", type: "mp4" },
@@ -43,7 +44,7 @@ describe("real media player", () => {
     expect(container.querySelector("video")).toBeInTheDocument();
     expect(screen.queryByText("Finding source…")).not.toBeInTheDocument();
   });
-  it("resolves only on Play, restores position from actual duration, and selects Thai or Off", async () => {
+  it("resolves only on Play, restores position from actual duration, and uses the provider default when English is absent", async () => {
     const callbacks = props(); const { container } = render(<MediaPlayer {...callbacks} />);
     expect(fetch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
@@ -57,9 +58,66 @@ describe("real media player", () => {
     expect(screen.getByRole("combobox", { name: "Subtitles" })).toHaveValue("off");
     video.currentTime = 25; fireEvent.pause(video);
     expect(callbacks.onPositionChange).toHaveBeenLastCalledWith(25, 100);
-    fireEvent.ended(video); expect(callbacks.onComplete).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Mark episode complete" }));
+  });
+  it("defaults to English subtitles even when the provider marks Thai as default", async () => {
+    const englishResult: MediaResult = { ...result, subtitles: [
+      result.subtitles[0],
+      { language: "en-US", label: "English", url: "/english.vtt", format: "vtt", default: false, availability: "available", displaySupported: true, syncStatus: "unverified" },
+    ] };
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => englishResult } as Response);
+    const { container } = render(<MediaPlayer {...props()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+    expect(screen.getByRole("combobox", { name: "Subtitles" })).toHaveValue("1");
+    const tracks = container.querySelectorAll("track");
+    expect(tracks[0]).not.toHaveAttribute("default");
+    expect(tracks[1]).toHaveAttribute("default");
+    expect(container.querySelector("video")?.getAttribute("src")).toBe(englishResult.video.url);
+  });
+  it("completes once when playback ends", async () => {
+    const callbacks = props(); const { container } = render(<MediaPlayer {...callbacks} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+    const video = container.querySelector("video")!;
+    Object.defineProperty(video, "duration", { configurable: true, value: 100 });
+    video.currentTime = 95;
+    fireEvent.ended(video);
+    fireEvent.ended(video);
+    expect(callbacks.onPositionChange).toHaveBeenLastCalledWith(95, 100);
     expect(callbacks.onComplete).toHaveBeenCalledOnce();
+  });
+  it("keeps manual completion and ignores end events after it", async () => {
+    const callbacks = props(); const { container } = render(<MediaPlayer {...callbacks} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+    const video = container.querySelector("video")!;
+    Object.defineProperty(video, "duration", { configurable: true, value: 100 });
+    video.currentTime = 90;
+    fireEvent.click(screen.getByRole("button", { name: "Mark episode complete" }));
+    fireEvent.ended(video);
+    fireEvent.ended(video);
+    expect(callbacks.onPositionChange).toHaveBeenLastCalledWith(90, 100);
+    expect(callbacks.onComplete).toHaveBeenCalledOnce();
+  });
+  it("queues one MAL progress update for the expected episode", async () => {
+    const store = createTrackerStore({
+      storage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+      createOperationId: () => "ended-episode-1",
+    });
+    const version = store.getState().beginMalBootstrap();
+    store.getState().activateMalAccount(version, true, { id: 1, name: "viewer-1" });
+    store.getState().registerAnime({ id: "mal-1", title: "Test anime", subtitle: "", synopsis: "", genres: [], totalEpisodes: 3, episodeMinutes: 24, accent: "violet" });
+    store.getState().ensureEntry("mal-1");
+    const callbacks = { ...props(), onComplete: () => store.getState().markEpisodeComplete("mal-1", 1) };
+    const { container } = render(<MediaPlayer {...callbacks} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+    const video = container.querySelector("video")!;
+    Object.defineProperty(video, "duration", { configurable: true, value: 100 });
+    fireEvent.ended(video);
+    store.getState().markEpisodeComplete("mal-1", 1);
+    expect(store.getState().library["mal-1"]).toMatchObject({ watchedEpisodes: 1, currentEpisode: 2 });
+    expect(store.getState().malSync.operations.map(({ changes }) => changes)).toEqual([{ watchedEpisodes: 1 }]);
   });
   it("throttles time updates and flushes the latest position on unmount", async () => {
     const callbacks = props(); const { container, unmount } = render(<MediaPlayer {...callbacks} />);
@@ -103,6 +161,22 @@ describe("real media player", () => {
     await act(async () => complete({ ok: true, json: async () => result } as Response));
     expect(container.querySelector("video")).toBeNull();
     expect(fetch).toHaveBeenCalledOnce();
+  });
+  it("does not complete a new episode when an old pending source ends", async () => {
+    let complete!: (response: Response) => void;
+    vi.mocked(fetch).mockReturnValueOnce(new Promise((resolve) => { complete = resolve; }));
+    const callbacks = props();
+    const newComplete = vi.fn();
+    const { rerender, container } = render(<MediaPlayer {...callbacks} />);
+    fireEvent.click(screen.getByRole("button", { name: "Play episode" }));
+    rerender(<MediaPlayer {...callbacks} episode={2} onComplete={newComplete} />);
+    await act(async () => complete({ ok: true, json: async () => result } as Response));
+    await waitFor(() => expect(container.querySelector("video")).not.toBeNull());
+    const video = container.querySelector("video")!;
+    Object.defineProperty(video, "duration", { configurable: true, value: 100 });
+    fireEvent.ended(video);
+    expect(callbacks.onComplete).not.toHaveBeenCalled();
+    expect(newComplete).not.toHaveBeenCalled();
   });
   it("offers manual play after autoplay rejection and reports dead subtitle tracks", async () => {
     vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValue(new Error("NotAllowedError"));

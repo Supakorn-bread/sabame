@@ -39,10 +39,10 @@ export async function resolveMedia(episode: EpisodeRequest, providers: MediaProv
             const subtitles = await resolveSubtitles(bundle.subtitles, options.probeSubtitle, signal);
             signal.throwIfAborted();
             const thai = subtitles.filter((t) => t.language === "th");
-            const score = thai.some((t) => t.displaySupported) ? 2 : subtitles.some((t) => t.language === "en" && t.displaySupported) ? 1 : 0;
+            const score = subtitles.some((t) => t.language === "en" && t.displaySupported) ? 2 : thai.some((t) => t.displaySupported) ? 1 : 0;
             const media: MediaResult = { provider: provider.id, video: bundle.video, subtitles, metadata: episode,
               thaiStatus: thai.some((t) => t.availability === "available") ? "present" : thai.length ? "unavailable" : bundle.subtitles ? "absent_in_returned_tracks" : "unknown",
-              selectionReason: score === 2 ? "thai_subtitle" : score === 1 ? "english_subtitle" : "video_only" };
+              selectionReason: score === 2 ? "english_subtitle" : score === 1 ? "thai_subtitle" : "video_only" };
             return { media, score };
           });
           options.log?.({ provider: provider.id, stage: "resolve", latencyMs: Date.now() - start, code: "ok" });
