@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { SimulatedPlayer } from "@/components/simulated-player";
-import { MediaPlayer } from "@/components/media-player";
+import { MediaPlayer, type MediaSourceSelection } from "@/components/media-player";
 import { useCatalogAnime, useCatalogEpisodes } from "@/features/media/use-catalog";
 import { ANIME_CATALOG } from "@/features/tracker/seed";
 import { getTrackingStatus, type TrackingStatus } from "@/features/tracker/selectors";
@@ -28,6 +28,7 @@ export default function WatchPage() {
   const { anime, error } = useCatalogAnime(animeId);
   const catalogEpisodes = useCatalogEpisodes(animeId, Boolean(anime) && animeId.startsWith("mal-"));
   const [demo, setDemo] = useState(false);
+  const [mediaSource, setMediaSource] = useState<MediaSourceSelection>("automatic");
   const entry = useTrackerStore((state) => state.library[animeId]);
   const malUser = useTrackerStore((state) => state.malUser);
   const trackingStatus = useTrackerStore((state) => getTrackingStatus(state, animeId));
@@ -71,7 +72,7 @@ export default function WatchPage() {
     <AppShell>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-6 lg:col-span-8">
-          {demo && !malUser ? <SimulatedPlayer key={`${animeId}-${entry.currentEpisode}`} title={anime.title} episode={entry.currentEpisode} durationSeconds={anime.episodeMinutes * 60 || 1440} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} /> : <MediaPlayer key={`${animeId}-${entry.currentEpisode}`} animeId={animeId} title={anime.title} episode={entry.currentEpisode} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} providerLoading={catalogEpisodes.status === "loading"} />}
+          {demo && !malUser ? <SimulatedPlayer key={`${animeId}-${entry.currentEpisode}`} title={anime.title} episode={entry.currentEpisode} durationSeconds={anime.episodeMinutes * 60 || 1440} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} /> : <MediaPlayer key={`${animeId}-${entry.currentEpisode}`} animeId={animeId} title={anime.title} episode={entry.currentEpisode} initialPosition={entry.playbackSeconds} onPositionChange={updatePosition} onComplete={completeCurrentEpisode} imageUrl={anime.heroUrl ?? anime.coverUrl} providerLoading={catalogEpisodes.status === "loading"} sourceSelection={mediaSource} onSourceSelectionChange={setMediaSource} />}
           <label className="flex items-center gap-2 text-sm text-[var(--text-soft)]"><input type="checkbox" checked={demo && !malUser} disabled={Boolean(malUser)} onChange={(event) => setDemo(event.target.checked)} />{malUser ? "Demo simulator is unavailable while MyAnimeList is connected" : "Use demo simulator (no video source)"}</label>
           {anime.totalEpisodes === null && <p className="text-sm">Episode count is unknown.{!providerEpisodes && <> <button type="button" className="rounded border px-3 py-2" onClick={() => selectEpisode(anime.id, entry.currentEpisode + 1)}>Select next episode</button></>}</p>}
 
