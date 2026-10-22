@@ -9,10 +9,31 @@ export interface SubtitleTrack {
   displaySupported: boolean;
   syncStatus: "unverified";
 }
+export type MediaProviderId = "animeparadise" | "hianime" | "anizone" | "anifume" | "animeruka";
+export interface MediaQualityOption { id: string; label: string }
+export interface MediaProviderAvailability {
+  id: MediaProviderId;
+  label: string;
+  status: "available" | "unavailable" | "timeout";
+  code?: string;
+  subtitleLanguage?: "th" | "en" | "none";
+  qualities?: MediaQualityOption[];
+  selectedQualityId?: string;
+  selectedServerId?: string;
+}
+export interface MediaProviderDiscovery {
+  metadata: { animeId: string; episodeNumber: number };
+  providers: MediaProviderAvailability[];
+  defaultProviderId?: MediaProviderId;
+}
 export interface MediaResult {
   provider: string;
-  video: { url: string; type: "hls" | "mp4"; expiresAt?: number };
+  video: { url: string; type: "hls" | "mp4"; expiresAt?: number; quality?: string };
   subtitles: SubtitleTrack[];
+  qualities?: MediaQualityOption[];
+  selectedQualityId?: string;
+  selectedServerId?: string;
+  embeddedSubtitles?: { language: "th"; label: string; removable: false };
   metadata: { animeId: string; episodeNumber: number };
   thaiStatus: "present" | "absent_in_returned_tracks" | "unavailable" | "unknown";
   selectionReason: "thai_subtitle" | "english_subtitle" | "video_only";
@@ -26,12 +47,22 @@ export interface RawSubtitle {
 export interface MediaBundle {
   video: MediaResult["video"];
   subtitles?: RawSubtitle[];
+  qualities?: MediaQualityOption[];
+  selectedQualityId?: string;
+  selectedServerId?: string;
+  embeddedSubtitles?: MediaResult["embeddedSubtitles"];
 }
-export interface EpisodeRequest { animeId: string; episodeNumber: number }
+export interface EpisodeRequest { animeId: string; episodeNumber: number; serverId?: string; qualityId?: string }
+export interface MediaServerList {
+  provider: "animeruka";
+  defaultServerId: string;
+  servers: { id: string; label: string }[];
+}
 export interface MediaProvider {
   id: string;
   requiresEnglishSubtitles?: boolean;
   resolve(episode: EpisodeRequest, signal: AbortSignal): Promise<MediaBundle>;
+  resolveAlternatives?(episode: EpisodeRequest, signal: AbortSignal): AsyncIterable<MediaBundle>;
 }
 /** Future external sources must supply matching evidence; they are never merged automatically. */
 export interface ExternalSubtitleCandidate extends RawSubtitle {

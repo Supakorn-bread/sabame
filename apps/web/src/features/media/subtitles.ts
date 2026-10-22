@@ -1,5 +1,5 @@
 import { normalizeLanguage } from "./language";
-import type { RawSubtitle, SubtitleFormat, SubtitleTrack } from "./types";
+import type { MediaResult, RawSubtitle, SubtitleFormat, SubtitleTrack } from "./types";
 
 export function detectSubtitleFormat(text: string): SubtitleFormat {
   const trimmed = text.replace(/^\uFEFF/, "").trimStart();
@@ -28,8 +28,15 @@ export async function resolveSubtitles(raw: RawSubtitle[] | undefined, probe: Su
       format, availability, displaySupported: availability === "available" && (format === "vtt" || format === "srt"),
       default: false, syncStatus: "unverified" };
   }));
-  const preferred = tracks.find((t) => t.language === "en" && t.displaySupported)
-    ?? tracks.find((t) => t.language === "th" && t.displaySupported);
+  const preferred = tracks.find((t) => t.language === "th" && t.displaySupported)
+    ?? tracks.find((t) => t.language === "en" && t.displaySupported);
   if (preferred) preferred.default = true;
   return tracks;
+}
+
+export function preferThaiSubtitle(result: MediaResult): MediaResult {
+  const preferred = result.subtitles.find((track) => track.language === "th" && track.displaySupported)
+    ?? result.subtitles.find((track) => track.language === "en" && track.displaySupported);
+  return { ...result, selectionReason: result.embeddedSubtitles || preferred?.language === "th" ? "thai_subtitle" : preferred?.language === "en" ? "english_subtitle" : "video_only",
+    subtitles: result.subtitles.map((track) => ({ ...track, default: track === preferred })) };
 }

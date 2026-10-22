@@ -11,12 +11,12 @@ describe("official MAL playback metadata", () => {
   it("loads canonical details with alternate titles without calling Jikan", async () => {
     vi.stubEnv("MAL_CLIENT_ID", "test-client");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
-      id: 51179, title: "Mushoku Tensei II: Isekai Ittara Honki Dasu", num_episodes: 12,
+      id: 51179, media_type: "tv", title: "Mushoku Tensei II: Isekai Ittara Honki Dasu", num_episodes: 12,
       alternative_titles: { en: "Mushoku Tensei: Jobless Reincarnation Season 2", ja: "無職転生 II", synonyms: ["Mushoku Tensei 2", "", 123] },
       start_date: "2023-07-10", nsfw: "white",
     })));
     await expect(fetchMetadata("mal-51179", new AbortController().signal)).resolves.toMatchObject({
-      id: "mal:anime:51179", mappings: { mal: 51179 }, episodeCount: 12, year: 2023,
+      id: "mal:anime:51179", format: "TV", mappings: { mal: 51179 }, episodeCount: 12, year: 2023,
       title: { english: "Mushoku Tensei: Jobless Reincarnation Season 2", romaji: "Mushoku Tensei II: Isekai Ittara Honki Dasu", native: "無職転生 II" },
       synonyms: ["Mushoku Tensei 2"],
     });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { isThaiSubtitle, normalizeLanguage } from "./language";
-import { resolveMedia } from "./resolver";
+import { resolveMedia, resolveProviderCandidates } from "./resolver";
 import { detectSubtitleFormat, toWebVtt } from "./subtitles";
 import { exactEpisode, normalizeTitle } from "./identity";
 import { MediaError, type MediaProvider, type RawSubtitle, type SubtitleFormat } from "./types";
@@ -19,12 +19,18 @@ describe("subtitle language normalization", () => {
   it.each(["Theatre", "The best", "Thames", "other", "", undefined, 42])("does not infer Thai from %s", (value) => expect(normalizeLanguage(value)).toBe("und"));
 });
 describe("episode-specific provider fallback", () => {
-  it("selects video + English and stops remaining providers", async () => {
+  it("models embedded Thai subtitles without probing or exposing switchable tracks", async () => {
+    const opts = options();
+    const result = await resolveMedia(episode, [{ id: "anifume", resolve: async () => ({ video: { url: "https://example.com/video.mp4", type: "mp4" }, subtitles: [track("en")], embeddedSubtitles: { language: "th", label: "Thai (embedded)", removable: false } }) }], opts);
+    expect(result).toMatchObject({ provider: "anifume", subtitles: [], thaiStatus: "present", selectionReason: "thai_subtitle", embeddedSubtitles: { language: "th", removable: false } });
+    expect(opts.probeSubtitle).not.toHaveBeenCalled();
+  });
+  it("selects a complete Thai bundle ahead of English", async () => {
     const spare = provider("unused", []);
     const result = await resolveMedia(episode, [provider("thai", [track("Thai")]), provider("english", [track("en")]), spare], options());
-    expect(result).toMatchObject({ provider: "english", thaiStatus: "absent_in_returned_tracks", selectionReason: "english_subtitle" });
-    expect(result.subtitles[0]).toMatchObject({ language: "en", default: true, syncStatus: "unverified" });
-    expect(spare.resolve).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ provider: "thai", thaiStatus: "present", selectionReason: "thai_subtitle" });
+    expect(result.subtitles[0]).toMatchObject({ language: "th", default: true, syncStatus: "unverified" });
+    expect(spare.resolve).toHaveBeenCalledTimes(1);
     expect(result.subtitles).toHaveLength(1); // No cross-provider merge.
   });
   it("keeps English over video only", async () => {
@@ -33,7 +39,7 @@ describe("episode-specific provider fallback", () => {
   it("preserves multiple languages and only one default", async () => {
     const result = await resolveMedia(episode, [provider("multi", [track("en"), track("th"), track("ja")])], options());
     expect(result.subtitles).toHaveLength(3);
-    expect(result.subtitles.filter((item) => item.default).map((item) => item.language)).toEqual(["en"]);
+    expect(result.subtitles.filter((item) => item.default).map((item) => item.language)).toEqual(["th"]);
   });
   it("falls back to displayable Thai when English cannot be displayed", async () => {
     const opts = options();
@@ -82,6 +88,45 @@ describe("episode-specific provider fallback", () => {
   });
   it("retains a valid earlier candidate when the overall deadline expires", async () => {
     expect(await resolveMedia(episode, [provider("good", []), { id: "hang", resolve: () => new Promise(() => {}) }], { ...options(), totalTimeout: 10 })).toMatchObject({ provider: "good" });
+  });
+  it("waits for a slower Thai source instead of returning faster English", async () => {
+    const slowThai: MediaProvider = { id: "thai", resolve: async () => { await new Promise((resolve) => setTimeout(resolve, 15)); return { video: { url: "https://example.com/thai.mp4", type: "mp4" }, embeddedSubtitles: { language: "th", label: "Thai (embedded)", removable: false } }; } };
+    expect(await resolveMedia(episode, [provider("english", [track("en")]), slowThai], { ...options(), providerTimeout: 100 })).toMatchObject({ provider: "thai", selectionReason: "thai_subtitle" });
+  });
+  it("requires English independently of the Thai preference score", async () => {
+    expect(await resolveMedia(episode, [{ ...provider("hianime", [track("en"), track("th")]), requiresEnglishSubtitles: true }], options())).toMatchObject({ provider: "hianime", selectionReason: "thai_subtitle", subtitles: [{ language: "en", default: false }, { language: "th", default: true }] });
+  });
+  it("aborts pending providers when the caller cancels", async () => {
+    const controller = new AbortController();
+    const observed: AbortSignal[] = [];
+    const pending = resolveMedia(episode, [{ id: "pending", resolve: async (_request, signal) => { observed.push(signal); return new Promise(() => {}); } }], { ...options(), signal: controller.signal });
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    controller.abort(new MediaError("cancelled"));
+    await expect(pending).rejects.toThrow("cancelled");
+    expect(observed.map((signal) => signal.aborted)).toEqual([true]);
+  });
+  it("starts providers concurrently and distinguishes a timed out source from absence", async () => {
+    const signals: AbortSignal[] = [];
+    const result = await resolveProviderCandidates(episode, [{ id: "slow", resolve: async (_request, signal) => { signals.push(signal); return new Promise(() => {}); } }, { id: "absent", resolve: async () => { throw new MediaError("no_source"); } }, provider("ready", [track("en")])], { ...options(), providerTimeout: 10 });
+    expect(result).toMatchObject([{ provider: "slow", code: "timeout" }, { provider: "absent", code: "no_source" }, { provider: "ready", media: { provider: "ready" } }]);
+    expect(signals.map((signal) => signal.aborted)).toEqual([true]);
+  });
+  it("uses a real alternative in the same provider when the default video fails", async () => {
+    const fallback = { video: { url: "https://example.com/360.mp4", type: "mp4" as const, quality: "360p" }, qualities: [{ id: "360p", label: "360p" }, { id: "720p", label: "720p" }], selectedQualityId: "360p", embeddedSubtitles: { language: "th" as const, label: "Thai (embedded)", removable: false as const } };
+    const native: MediaProvider = { id: "anifume", resolve: async () => ({ ...fallback, video: { ...fallback.video, url: "https://example.com/dead.mp4", quality: "720p" } }), async *resolveAlternatives() { yield fallback; } };
+    const opts = options(); opts.validateVideo.mockRejectedValueOnce(new MediaError("upstream_unavailable"));
+    expect(await resolveMedia(episode, [native, provider("english", [track("en")])], opts)).toMatchObject({ provider: "anifume", video: { quality: "360p" }, selectedQualityId: "360p", selectionReason: "thai_subtitle" });
+  });
+  it.each([{ qualityId: "720p" }, { serverId: "1" }])("never substitutes an explicit source choice %j", async (choice) => {
+    const alternatives = vi.fn(async function* () { yield { video: { url: "https://example.com/other.mp4", type: "mp4" as const } }; });
+    const native: MediaProvider = { ...provider("native"), resolveAlternatives: alternatives };
+    const opts = options(); opts.validateVideo.mockRejectedValue(new MediaError("invalid_video"));
+    await expect(resolveMedia({ ...episode, ...choice }, [native], opts)).rejects.toThrow("invalid_video");
+    expect(alternatives).not.toHaveBeenCalled();
+  });
+  it("keeps all alternative attempts inside the original provider deadline", async () => {
+    const native: MediaProvider = { id: "anifume", resolve: async () => { throw new MediaError("no_source"); }, async *resolveAlternatives(_episode, signal) { await new Promise<void>((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true })); yield { video: { url: "https://example.com/late.mp4", type: "mp4" } }; } };
+    expect(await resolveProviderCandidates(episode, [native], { ...options(), providerTimeout: 10 })).toEqual([{ provider: "anifume", code: "timeout" }]);
   });
   it("propagates cancellation and all-provider failure", async () => {
     const controller = new AbortController(); controller.abort();

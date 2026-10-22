@@ -77,7 +77,9 @@ export function officialMalMetadata(value: unknown): IMediaMetadata {
     const name = safeRecord(genre)?.name;
     return typeof name === "string" && name.length <= 80 ? [name] : [];
   }).slice(0, 20) : undefined;
+  const formats: Record<string, IMediaMetadata["format"]> = { tv: "TV", movie: "MOVIE", ova: "OVA", ona: "ONA", special: "SPECIAL", tv_special: "SPECIAL", music: "MUSIC" };
   return {
+    format: typeof node.media_type === "string" ? formats[node.media_type] : undefined,
     id: `mal:anime:${id}`,
     providerId: "mal",
     catalogType: "ANIME",
@@ -98,7 +100,7 @@ export function officialMalMetadata(value: unknown): IMediaMetadata {
   };
 }
 
-const MAL_FIELDS = "id,title,main_picture,alternative_titles,start_date,synopsis,mean,num_episodes,genres,average_episode_duration,nsfw";
+const MAL_FIELDS = "id,media_type,title,main_picture,alternative_titles,start_date,synopsis,mean,num_episodes,genres,average_episode_duration,nsfw";
 
 async function searchOfficialMal(query: string, signal: AbortSignal, clientId: string) {
   const params = new URLSearchParams({
