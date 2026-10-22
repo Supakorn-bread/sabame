@@ -2,9 +2,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("./catalog", () => ({ fetchMetadata: vi.fn() }));
+vi.mock("./anizone", () => ({ getAnizoneEpisodes: vi.fn(), anizoneAdapter: { id: "anizone", resolve: vi.fn() } }));
 vi.mock("./hianime", () => ({ getHianimeEpisodes: vi.fn(), hianimeAdapter: { id: "hianime", resolve: vi.fn() } }));
 vi.mock("./sdk", () => ({ animeParadise: { search: vi.fn(), fetchContentUnits: vi.fn(), resolveStream: vi.fn() }, mappingClient: { resolveProviderMediaId: vi.fn() } }));
 import { fetchMetadata } from "./catalog";
+import { getAnizoneEpisodes } from "./anizone";
 import { getHianimeEpisodes } from "./hianime";
 import { animeParadise, mappingClient } from "./sdk";
 import { animeParadiseAdapter, getProviderEpisodes } from "./providers";
@@ -127,6 +129,12 @@ describe("SDK provider boundary", () => {
     vi.mocked(animeParadise.fetchContentUnits).mockRejectedValue(new Error("unavailable"));
     vi.mocked(getHianimeEpisodes).mockResolvedValue([{ number: 3, title: "Third" }]);
     expect(await getProviderEpisodes("mal-1", new AbortController().signal)).toEqual([{ number: 3, title: "Third" }]);
+  });
+  it("reaches Anizone episode inventory when both earlier providers fail", async () => {
+    vi.mocked(animeParadise.fetchContentUnits).mockRejectedValue(new Error("unavailable"));
+    vi.mocked(getHianimeEpisodes).mockRejectedValue(new Error("unavailable"));
+    vi.mocked(getAnizoneEpisodes).mockResolvedValue([{ number: 7, title: "Seventh" }]);
+    expect(await getProviderEpisodes("mal-1", new AbortController().signal)).toEqual([{ number: 7, title: "Seventh" }]);
   });
   it("omits ambiguous episode numbers from provider availability", async () => {
     vi.mocked(animeParadise.fetchContentUnits).mockResolvedValue([

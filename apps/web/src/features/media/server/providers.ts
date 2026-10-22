@@ -1,9 +1,13 @@
 import "server-only";
+import { providerSearchFailure } from "../resolver";
 import { exactEpisode, normalizeTitle } from "../identity";
 import { normalizeLanguage } from "../language";
 import { MediaError, type MediaProvider } from "../types";
 import { fetchMetadata } from "./catalog";
 import { getHianimeEpisodes, hianimeAdapter } from "./hianime";
+import { anizoneAdapter, getAnizoneEpisodes } from "./anizone";
+import { anifumeAdapter } from "./anifume";
+import { animerukaAdapter } from "./animeruka";
 import { animeParadiseSeedSegments, hasAnimeParadiseSeedConfiguration } from "./seed-provider-mappings";
 import { animeParadise } from "./sdk";
 
@@ -29,7 +33,7 @@ async function fetchAnimeParadiseUnits(animeId: string, signal: AbortSignal, epi
   const searches = await Promise.allSettled(titles.slice(0, 4).map((title) => animeParadise.search(title, options)));
   signal.throwIfAborted();
   const hits = searches.flatMap((search) => search.status === "fulfilled" ? search.value : []);
-  if (!hits.length) throw new MediaError(searches.some((search) => search.status === "rejected") ? "provider_unavailable" : "no_source");
+  if (!hits.length) throw new MediaError(providerSearchFailure(searches));
   const matches = new Map(hits.filter((hit) => hit.catalogType === "ANIME" && aliases.has(normalizeTitle(hit.title)) && (!hit.year || !metadata.year || hit.year === metadata.year)).map((hit) => [hit.id, hit]));
   if (matches.size !== 1) throw new MediaError("mapping_required");
   const units = await animeParadise.fetchContentUnits(matches.keys().next().value!, options);
@@ -47,7 +51,11 @@ export async function getProviderEpisodes(animeId: string, signal: AbortSignal) 
       .map(({ number, title }) => ({ number, title }));
     if (episodes.length) return episodes;
   } catch { signal.throwIfAborted(); }
-  return getHianimeEpisodes(animeId, signal);
+  try {
+    const episodes = await getHianimeEpisodes(animeId, signal);
+    if (episodes.length) return episodes;
+  } catch { signal.throwIfAborted(); }
+  return getAnizoneEpisodes(animeId, signal);
 }
 
 export const animeParadiseAdapter: MediaProvider = {
@@ -70,4 +78,4 @@ export const animeParadiseAdapter: MediaProvider = {
   },
 };
 /** Enable providers only after their adapter and delivery host policy have been verified. */
-export const mediaProviders: MediaProvider[] = [animeParadiseAdapter, hianimeAdapter];
+export const mediaProviders: MediaProvider[] = [animeParadiseAdapter, hianimeAdapter, anizoneAdapter, anifumeAdapter, animerukaAdapter];
