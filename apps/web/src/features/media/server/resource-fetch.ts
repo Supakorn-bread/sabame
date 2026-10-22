@@ -3,10 +3,10 @@ import { lookup } from "node:dns/promises";
 import { request } from "node:https";
 import type { IncomingHttpHeaders } from "node:http";
 import { MediaError } from "../types";
-import { allowedHosts, isPublicAddress, resourceReferer, validateResourceUrl, type DeliveryPolicyId } from "./resource-security";
+import { isPublicAddress, resourceReferer, validatePolicyResource, type DeliveryPolicyId, type ResourceKind } from "./resource-security";
 
 export interface ResourceBody { body: Buffer; status: number; headers: IncomingHttpHeaders; url: string }
-interface ResourceOptions { maxBytes?: number; range?: string; redirects?: number; policy?: DeliveryPolicyId }
+interface ResourceOptions { maxBytes?: number; range?: string; redirects?: number; policy?: DeliveryPolicyId; kind?: ResourceKind }
 export async function fetchResource(value: string, signal: AbortSignal, options: ResourceOptions = {}): Promise<ResourceBody> {
   try { return await fetchResourceAttempt(value, signal, options); }
   catch (error) {
@@ -19,7 +19,7 @@ export async function fetchResource(value: string, signal: AbortSignal, options:
 async function fetchResourceAttempt(value: string, signal: AbortSignal, options: ResourceOptions): Promise<ResourceBody> {
   signal.throwIfAborted();
   const policy = options.policy ?? "default";
-  const url = validateResourceUrl(value, allowedHosts(policy));
+  const url = validatePolicyResource(value, policy, options.kind);
   const addresses = await lookup(url.hostname, { all: true });
   signal.throwIfAborted();
   if (!addresses.length || addresses.some(({ address }) => !isPublicAddress(address))) throw new MediaError("private_resource_address");
@@ -29,7 +29,7 @@ async function fetchResourceAttempt(value: string, signal: AbortSignal, options:
     const req = request(url, {
       signal,
       family: pinned.family,
-      headers: { Referer: resourceReferer(policy), "Accept-Encoding": "identity", ...(options.range ? { Range: options.range } : {}) },
+      headers: { ...(resourceReferer(policy) ? { Referer: resourceReferer(policy) } : {}), ...(policy === "animeruka" ? { "User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache" } : {}), "Accept-Encoding": "identity", ...(options.range ? { Range: options.range } : {}) },
       lookup: (_host, options, callback) => options.all ? callback(null, [pinned]) : callback(null, pinned.address, pinned.family),
     }, (res) => {
       const status = res.statusCode ?? 502;

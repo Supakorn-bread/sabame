@@ -66,4 +66,19 @@ describe("signed media resources", () => {
     expect(boundedRange("bytes=100-")).toBe("bytes=100-8388707");
     expect(() => boundedRange("bytes=0-1,3-4")).toThrow("invalid_range");
   });
+  it("confines Bilibili tickets to JSON subtitle assets and bounded signed offsets", () => {
+    const source = { url: "https://s.bstarstatic.com/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.json?auth_key=current", kind: "subtitle" as const, policy: "bilibili" as const, subtitleOffsetMs: 1084, exp: Date.now() + 60_000 };
+    expect(verifyResource(value(signResource(source)))).toEqual(source);
+    for (const subtitleOffsetMs of [-60_000, -1700, 0, 2500, 60_000]) expect(verifyResource(value(signResource({ ...source, subtitleOffsetMs })))).toEqual({ ...source, subtitleOffsetMs });
+    const signed = (body: object) => {
+      const payload = Buffer.from(JSON.stringify(body)).toString("base64url");
+      return `${payload}.${createHmac("sha256", process.env.MEDIA_PROXY_SECRET!).update(payload).digest("base64url")}`;
+    };
+    for (const change of [{ kind: "hls" }, { kind: "mp4" }, { kind: "segment" }, { url: "https://s.bstarstatic.com/other/a.json" }, { url: "https://s.bstarstatic.com/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.ass" }, { url: "https://s.bstarstatic.com.evil.test/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.json" }, { subtitleOffsetMs: 60_001 }, { subtitleOffsetMs: -60_001 }, { subtitleOffsetMs: 1.5 }, { subtitleOffsetMs: undefined }]) {
+      expect(() => signResource({ ...source, ...change } as typeof source)).toThrow();
+      expect(() => verifyResource(signed({ ...source, ...change }))).toThrow();
+    }
+    expect(() => signResource({ ...source, policy: "default" })).toThrow("resource_host_not_allowed");
+    expect(() => signResource({ ...ticket(), policy: "bilibili", subtitleOffsetMs: 1084 })).toThrow();
+  });
 });

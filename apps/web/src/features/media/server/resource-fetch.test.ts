@@ -119,6 +119,22 @@ describe("bounded resource transport", () => {
     await expect(fetchResource("https://hls.dramahot.top/master.m3u8", new AbortController().signal, { policy: "hianime" })).rejects.toThrow("private_resource_address");
     expect(request).not.toHaveBeenCalled();
   });
+  it("fetches public Bilibili subtitles without authentication or fabricated referer", async () => {
+    respond('{"body":[]}');
+    const subtitle = "https://s.bstarstatic.com/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.json";
+    expect((await fetchResource(subtitle, new AbortController().signal, { policy: "bilibili", kind: "subtitle" })).body.toString()).toBe('{"body":[]}');
+    expect(vi.mocked(request).mock.calls[0][1]).toMatchObject({ headers: { "Accept-Encoding": "identity" } });
+    expect(vi.mocked(request).mock.calls[0][1]?.headers).not.toHaveProperty("Referer");
+  });
+  it.each(["https://evil.test/a.json", "https://s.bstarstatic.com/other/file.json", "https://s.bstarstatic.com/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.ass"])("rejects Bilibili redirect outside its subtitle boundary %s", async (location) => {
+    respond("", 302, { location });
+    await expect(fetchResource("https://s.bstarstatic.com/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.json", new AbortController().signal, { policy: "bilibili", kind: "subtitle" })).rejects.toThrow();
+    expect(request).toHaveBeenCalledOnce();
+  });
+  it("rejects Bilibili video resource kinds before DNS or a connection", async () => {
+    await expect(fetchResource("https://s.bstarstatic.com/ogv/subtitle/a02ad1fc80c80166c21a2acd65d999278dd5e699.json", new AbortController().signal, { policy: "bilibili", kind: "mp4" })).rejects.toThrow("invalid_resource");
+    expect(lookup).not.toHaveBeenCalled(); expect(request).not.toHaveBeenCalled();
+  });
   it("enforces body limits even without content-length", async () => {
     respond("too large");
     await expect(fetchResource(url, new AbortController().signal, { maxBytes: 3 })).rejects.toThrow("resource_too_large");

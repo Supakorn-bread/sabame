@@ -28,8 +28,10 @@ describe("provider delivery policy", () => {
     expect(await probeSubtitle(subtitleUrl, signal, "hianime")).toBe("vtt");
     expect(fetchResource).toHaveBeenLastCalledWith(subtitleUrl, signal, { policy: "hianime" });
     resource("#EXTM3U\nhttps://hls1.drama1.cfd/one.ts", manifestUrl);
+    const bytes = Buffer.alloc(188 * 5); for (const offset of [0, 188, 376, 564, 752]) bytes[offset] = 0x47;
+    vi.mocked(fetchResource).mockResolvedValueOnce({ body: bytes, url: "https://hls1.drama1.cfd/one.ts", status: 206, headers: {} });
     await expect(validateVideo(manifestUrl, signal, "hianime")).resolves.toBeUndefined();
-    expect(fetchResource).toHaveBeenLastCalledWith(manifestUrl, signal, { policy: "hianime", maxBytes: 1_048_576, range: "bytes=0-65535" });
+    expect(fetchResource).toHaveBeenLastCalledWith("https://hls1.drama1.cfd/one.ts", signal, { policy: "hianime", maxBytes: 33_554_432, range: "bytes=0-65535" });
     resource("#EXTM3U\nhttps://evil.test/one.ts", manifestUrl);
     await expect(validateVideo(manifestUrl, signal, "hianime")).rejects.toThrow("resource_host_not_allowed");
   });
