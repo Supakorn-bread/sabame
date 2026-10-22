@@ -1,0 +1,2670 @@
+{
+  "runDate": "2026-10-23",
+  "baseUrl": "http://localhost:3000",
+  "endpoint": "/api/anime/{animeId}/media/providers?episodeNumber=1",
+  "sample": {
+    "source": "Local public anime catalog search",
+    "queries": [
+      {
+        "term": "no",
+        "status": 502,
+        "returned": 0
+      },
+      {
+        "term": "wa",
+        "status": 502,
+        "returned": 0
+      },
+      {
+        "term": "love",
+        "status": 200,
+        "returned": 19
+      },
+      {
+        "term": "world",
+        "status": 200,
+        "returned": 19
+      },
+      {
+        "term": "school",
+        "status": 200,
+        "returned": 17
+      },
+      {
+        "term": "dragon",
+        "status": 200,
+        "returned": 20
+      },
+      {
+        "term": "magic",
+        "status": 200,
+        "returned": 18
+      },
+      {
+        "term": "season",
+        "status": 200,
+        "returned": 20
+      },
+      {
+        "term": "gundam",
+        "status": 200,
+        "returned": 20
+      },
+      {
+        "term": "precure",
+        "status": 200,
+        "returned": 20
+      }
+    ],
+    "uniqueCandidates": 151,
+    "seed": 20261023,
+    "selection": "xorshift32-seeded Fisher-Yates shuffle over the deduplicated successful-query pool; first 50 selected",
+    "metadataFetchNote": "Direct Jikan access timed out in this runtime. The local catalog search returned MAL IDs and titles, but not format or year; those remain unknown.",
+    "coverageLimit": "This is a seeded sample from eight successful broad catalog searches, not a random sample of all MAL anime. The catalog search result exposes title but not format or year, so both remain unknown."
+  },
+  "smokeTest": {
+    "animeId": "mal-517",
+    "title": "School Rumble: Extra Class",
+    "episodeNumber": 1,
+    "httpStatus": 200,
+    "defaultProviderId": "hianime",
+    "providers": [
+      {
+        "id": "animeparadise",
+        "status": "unavailable",
+        "code": "no_source"
+      },
+      {
+        "id": "hianime",
+        "status": "available",
+        "subtitleLanguage": "en"
+      },
+      {
+        "id": "anizone",
+        "status": "available",
+        "subtitleLanguage": "en"
+      },
+      {
+        "id": "anifume",
+        "status": "unavailable",
+        "code": "mapping_required"
+      },
+      {
+        "id": "animeruka",
+        "status": "unavailable",
+        "code": "mapping_required"
+      }
+    ],
+    "checks": {
+      "scopedMetadata": true,
+      "registeredProvidersOnly": true,
+      "unavailableHaveCodes": true,
+      "defaultIsAvailable": true,
+      "thaiPreferredWhenPresent": true
+    }
+  },
+  "firstPassSummary": {
+    "requestedTitles": 50,
+    "completedTitles": 50,
+    "httpStatusCounts": { "200": 50 },
+    "providerAttempts": 250,
+    "providerStatusCounts": {
+      "animeparadise": { "available": 14, "unavailable": 36, "timeout": 0 },
+      "hianime": { "available": 37, "unavailable": 13, "timeout": 0 },
+      "anizone": { "available": 8, "unavailable": 42, "timeout": 0 },
+      "anifume": { "available": 0, "unavailable": 50, "timeout": 0 },
+      "animeruka": { "available": 0, "unavailable": 50, "timeout": 0 }
+    },
+    "availableProviderResults": 59,
+    "responsesWithQualityOptions": 0,
+    "qualityLabelCheck": "No provider returned quality options in this sample.",
+    "titleDefaultCounts": { "thai": 0, "english": 40, "subtitleFree": 0, "noAvailableProvider": 10 },
+    "defaultProviderCounts": { "animeparadise": 14, "hianime": 26 },
+    "failureCodeCounts": {
+      "no_source": 118,
+      "mapping_required": 29,
+      "provider_unavailable": 29,
+      "resource_host_not_allowed": 10,
+      "invalid_resource": 3,
+      "english_subtitle_unavailable": 2
+    },
+    "timeouts": 0,
+    "titlesWithAllContractChecksPassing": 50,
+    "contractCheckFailures": 0,
+    "scopeNote": "First-pass discovery results only. A later AnimeRuka timeout-classification change was not mixed into these rows."
+  },
+  "autoSelectionSummary": {
+    "requestedCalls": 5,
+    "completedCalls": 5,
+    "httpStatusCounts": { "200": 5 },
+    "selectedProviderMatchesFirstPassDefault": 5,
+    "selectedProviderAvailableInFirstPass": 5,
+    "selectionReasonCounts": { "english_subtitle": 5 },
+    "thaiStatusCounts": { "absent_in_returned_tracks": 5 },
+    "scopeNote": "These checks validate the API selection response only. They do not claim video playback."
+  },
+  "autoSelectionChecks": [
+    {
+      "animeId": "mal-517",
+      "title": "School Rumble: Extra Class",
+      "run": "targeted-post",
+      "httpStatus": 200,
+      "initialDiscoveryProviderId": "hianime",
+      "initialDiscoverySubtitleLanguage": "en",
+      "selectedProvider": "hianime",
+      "selectedProviderWasAvailableInFirstPass": true,
+      "selectedProviderMatchesDiscoveryDefault": true,
+      "selectionReason": "english_subtitle",
+      "thaiStatus": "absent_in_returned_tracks",
+      "embeddedSubtitles": null,
+      "subtitles": [
+        {
+          "language": "en",
+          "label": "English",
+          "format": "vtt",
+          "default": true,
+          "availability": "available",
+          "displaySupported": true,
+          "syncStatus": "unverified"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "selectedProviderKnown": true,
+        "selectedProviderWasAvailableInFirstPass": true,
+        "thaiDefaultConsistent": true,
+        "englishDefaultConsistent": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-31251",
+      "title": "Mobile Suit Gundam: Iron-Blooded Orphans",
+      "run": "targeted-post",
+      "httpStatus": 200,
+      "initialDiscoveryProviderId": "animeparadise",
+      "initialDiscoverySubtitleLanguage": "en",
+      "selectedProvider": "animeparadise",
+      "selectedProviderWasAvailableInFirstPass": true,
+      "selectedProviderMatchesDiscoveryDefault": true,
+      "selectionReason": "english_subtitle",
+      "thaiStatus": "absent_in_returned_tracks",
+      "embeddedSubtitles": null,
+      "subtitles": [
+        {
+          "language": "en",
+          "label": "English",
+          "format": "vtt",
+          "default": true,
+          "availability": "available",
+          "displaySupported": true,
+          "syncStatus": "unverified"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "selectedProviderKnown": true,
+        "selectedProviderWasAvailableInFirstPass": true,
+        "thaiDefaultConsistent": true,
+        "englishDefaultConsistent": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-59978",
+      "title": "Frieren: Beyond Journey's End Season 2",
+      "run": "targeted-post",
+      "httpStatus": 200,
+      "initialDiscoveryProviderId": "animeparadise",
+      "initialDiscoverySubtitleLanguage": "en",
+      "selectedProvider": "animeparadise",
+      "selectedProviderWasAvailableInFirstPass": true,
+      "selectedProviderMatchesDiscoveryDefault": true,
+      "selectionReason": "english_subtitle",
+      "thaiStatus": "absent_in_returned_tracks",
+      "embeddedSubtitles": null,
+      "subtitles": [
+        {
+          "language": "en",
+          "label": "English",
+          "format": "vtt",
+          "default": true,
+          "availability": "available",
+          "displaySupported": true,
+          "syncStatus": "unverified"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "selectedProviderKnown": true,
+        "selectedProviderWasAvailableInFirstPass": true,
+        "thaiDefaultConsistent": true,
+        "englishDefaultConsistent": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-37086",
+      "title": "Kakegurui××",
+      "run": "targeted-post",
+      "httpStatus": 200,
+      "initialDiscoveryProviderId": "hianime",
+      "initialDiscoverySubtitleLanguage": "en",
+      "selectedProvider": "hianime",
+      "selectedProviderWasAvailableInFirstPass": true,
+      "selectedProviderMatchesDiscoveryDefault": true,
+      "selectionReason": "english_subtitle",
+      "thaiStatus": "absent_in_returned_tracks",
+      "embeddedSubtitles": null,
+      "subtitles": [
+        {
+          "language": "en",
+          "label": "English",
+          "format": "vtt",
+          "default": true,
+          "availability": "available",
+          "displaySupported": true,
+          "syncStatus": "unverified"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "selectedProviderKnown": true,
+        "selectedProviderWasAvailableInFirstPass": true,
+        "thaiDefaultConsistent": true,
+        "englishDefaultConsistent": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-24405",
+      "title": "World Trigger",
+      "run": "targeted-post",
+      "httpStatus": 200,
+      "initialDiscoveryProviderId": "hianime",
+      "initialDiscoverySubtitleLanguage": "en",
+      "selectedProvider": "hianime",
+      "selectedProviderWasAvailableInFirstPass": true,
+      "selectedProviderMatchesDiscoveryDefault": true,
+      "selectionReason": "english_subtitle",
+      "thaiStatus": "absent_in_returned_tracks",
+      "embeddedSubtitles": null,
+      "subtitles": [
+        {
+          "language": "en",
+          "label": "English",
+          "format": "vtt",
+          "default": true,
+          "availability": "available",
+          "displaySupported": true,
+          "syncStatus": "unverified"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "selectedProviderKnown": true,
+        "selectedProviderWasAvailableInFirstPass": true,
+        "thaiDefaultConsistent": true,
+        "englishDefaultConsistent": true
+      },
+      "errorCode": null
+    }
+  ],
+  "results": [
+    {
+      "animeId": "mal-517",
+      "title": "School Rumble: Extra Class",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "mapping_required"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-37086",
+      "title": "Kakegurui××",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-63042",
+      "title": "Star Detective Precure!",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-37501",
+      "title": "Hug tto! Precure♡Futari wa Precure Movie: All Stars Memories",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "mapping_required"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-23259",
+      "title": "Gundam Reconguista in G",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-21105",
+      "title": "Love Stage!!",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-31251",
+      "title": "Mobile Suit Gundam: Iron-Blooded Orphans",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-57390",
+      "title": "Wonderful Precure!",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-41353",
+      "title": "The God of High School",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-34933",
+      "title": "Kakegurui",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-34934",
+      "title": "Love and Lies",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-63365",
+      "title": "Magic",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "mapping_required"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-30694",
+      "title": "Dragon Ball Super",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-32951",
+      "title": "Akashic Records of Bastard Magic Instructor",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-35818",
+      "title": "Love Rice 2",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-37475",
+      "title": "Boarding School Juliet",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "invalid_resource"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-61316",
+      "title": "Re:ZERO -Starting Life in Another World- Season 4",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-906",
+      "title": "Dragon Ball Z: Wrath of the Dragon",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "mapping_required"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-32937",
+      "title": "KonoSuba: God's Blessing on This Wonderful World! 2",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "english_subtitle_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-36266",
+      "title": "Magical Girl Site",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-59978",
+      "title": "Frieren: Beyond Journey's End Season 2",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-11843",
+      "title": "Daily Lives of High School Boys",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-12191",
+      "title": "Glitter Force",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-59193",
+      "title": "Mushoku Tensei: Jobless Reincarnation Season 3",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "resource_host_not_allowed"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-24",
+      "title": "School Rumble",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-192",
+      "title": "Love Hina Spring Movie",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "mapping_required"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-16419",
+      "title": "Glitter Force Doki Doki",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-18205",
+      "title": "World Fool News",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-14741",
+      "title": "Love, Chunibyo & Other Delusions!",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-8525",
+      "title": "The World God Only Knows",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-35203",
+      "title": "In Another World With My Smartphone",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-22777",
+      "title": "Dragon Ball Z Kai: The Final Chapters",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-15051",
+      "title": "Love Live! School Idol Project",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-18671",
+      "title": "Love, Chunibyo & Other Delusions!: Heart Throb",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-813",
+      "title": "Dragon Ball Z",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-59027",
+      "title": "Spy x Family Season 3",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-34973",
+      "title": "Love Live! Sunshine!! Season 2",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-24405",
+      "title": "World Trigger",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-57658",
+      "title": "Jujutsu Kaisen: The Culling Game Part 1",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-60394",
+      "title": "Dragon",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-54716",
+      "title": "Power of Hope ~Precure Full Bloom~",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-35760",
+      "title": "Attack on Titan Season 3",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "english_subtitle_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "mapping_required"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-1932",
+      "title": "Yes! Precure 5",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-31884",
+      "title": "Witchy Pretty Cure!",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "invalid_resource"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-35972",
+      "title": "Fairy Tail Final Series",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-40906",
+      "title": "Dragon Quest: The Adventure of Dai",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-9656",
+      "title": "Kimi ni Todoke: From Me to You Season 2",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "invalid_resource"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-2581",
+      "title": "Mobile Suit Gundam 00",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": null,
+      "defaultSubtitleLanguage": null,
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "hianime",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-603",
+      "title": "Pretty Cure",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "hianime",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "unavailable",
+          "code": "mapping_required"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    },
+    {
+      "animeId": "mal-8074",
+      "title": "High School of the Dead",
+      "format": "unknown",
+      "year": null,
+      "run": "first-pass",
+      "httpStatus": 200,
+      "defaultProviderId": "animeparadise",
+      "defaultSubtitleLanguage": "en",
+      "providers": [
+        {
+          "id": "animeparadise",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "hianime",
+          "status": "available",
+          "subtitleLanguage": "en"
+        },
+        {
+          "id": "anizone",
+          "status": "unavailable",
+          "code": "provider_unavailable"
+        },
+        {
+          "id": "anifume",
+          "status": "unavailable",
+          "code": "no_source"
+        },
+        {
+          "id": "animeruka",
+          "status": "unavailable",
+          "code": "no_source"
+        }
+      ],
+      "validation": {
+        "http200": true,
+        "scopedMetadata": true,
+        "registeredProvidersOnly": true,
+        "unavailableHaveCodes": true,
+        "defaultIsAvailable": true,
+        "defaultSubtitlePreference": true,
+        "qualitiesMatchSelected": true
+      },
+      "errorCode": null
+    }
+  ]
+}
