@@ -9,7 +9,10 @@ const url = "https://a16.rukoluo.com/f/Synthetic/Synthetic-01-q360.mp4?m=synthet
 beforeEach(() => vi.stubEnv("MEDIA_PROXY_SECRET", "synthetic-secret-".repeat(4)));
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 it("confines Anifume to verified CDN hosts, MP4 paths and observed token query keys", () => {
-  for (const host of ["a15.rukoluo.com", "a16.rukoluo.com", "a17.rukoluo.com"]) expect(validatePolicyResource(url.replace("a16.rukoluo.com", host), "anifume", "mp4").hostname).toBe(host);
+  for (const host of ["a12.rukoluo.com", "a13.rukoluo.com", "a15.rukoluo.com", "a16.rukoluo.com", "a17.rukoluo.com"]) expect(validatePolicyResource(url.replace("a16.rukoluo.com", host), "anifume", "mp4").hostname).toBe(host);
+  const nested = "https://a13.rukoluo.com/f/1/SyntheticTitle/SyntheticEpisode.mp4?m=syntheticToken000&e=1900000000";
+  expect(validatePolicyResource(nested, "anifume", "mp4").pathname).toBe("/f/1/SyntheticTitle/SyntheticEpisode.mp4");
+  for (const bad of [nested.replace("/f/1/", "/f/2/"), nested.replace("a13.", "a13.evil."), nested.replace("/f/1/", "/f/../../other/"), nested.replace(".mp4?", ".html?")]) expect(() => validatePolicyResource(bad, "anifume", "mp4")).toThrow();
   for (const value of [url.replace("a16", "a18"), url.replace("/f/", "/other/"), url + "&extra=1", url + "&m=duplicate", url.replace(".mp4?", ".m3u8?"), url + "#fragment"]) expect(() => validatePolicyResource(value, "anifume", "mp4")).toThrow();
   expect(() => validatePolicyResource(url, "default", "mp4")).toThrow();
   expect(() => validatePolicyResource(url, "anifume", "subtitle")).toThrow();

@@ -7,7 +7,11 @@ import { validatePolicyResource } from "./resource-security";
 
 const origin = "https://anifume.com";
 interface Episode { number: number; title: string; url: string }
-interface Series { url: string; title: string; count: number; complete: boolean }
+interface Series { url: string; title: string; count: number; complete: boolean; season?: number }
+function matchTitle(value: string) {
+  const roman: Record<string, string> = { ii: "2", iii: "3", iv: "4" };
+  return normalizeTitle(value).replace(/\s+(?:(?:season\s+)?([2-4])|(ii|iii|iv))$/, (_, number: string | undefined, numeral: string | undefined) => ` season ${number ?? roman[numeral!]}`);
+}
 function text(value: string) {
   return value.replace(/<[^>]*>/g, "").replace(/&(?:amp|quot|apos|lt|gt|#39);/g, (entity) => ({ "&amp;": "&", "&quot;": '"', "&apos;": "'", "&#39;": "'", "&lt;": "<", "&gt;": ">" })[entity]!).replace(/\s+/g, " ").trim();
 }
@@ -41,40 +45,57 @@ function anchors(html: string) {
 function parseSeries(title: string, url: string): Series | undefined {
   const range = /ตอนที่\s*1\s*-\s*([1-9]\d*)\s+ซับไทย(?:\s*\[จบ\])?$/.exec(title);
   if (!range || /พากย์ไทย/.test(title)) return;
-  const name = title.slice(0, range.index).replace(/[\u0E00-\u0E7F][\s\S]*$/, "").trim();
+  const prefix = title.slice(0, range.index).trim();
+  const name = prefix.replace(/[\u0E00-\u0E7F][\s\S]*$/, "").trim() || prefix;
   const count = Number(range[1]);
   if (!name || count > 2000) return;
   const seasons = [...title.slice(0, range.index).matchAll(/ภาค\s*([1-9]\d*)/g)].map((match) => Number(match[1]));
   const namedSeason = /(?:\b([1-9]\d*)(?:st|nd|rd|th)?\s*(?:season|part)?|\b(?:season|part)\s*([1-9]\d*))\s*$/i.exec(name);
-  if (seasons.length > 1 || seasons.length === 1 && seasons[0] !== (namedSeason ? Number(namedSeason[1] ?? namedSeason[2]) : 1)) return;
-  return { url, title: name, count, complete: /\[จบ\]$/.test(title) };
+  if (seasons.length > 1 || seasons.length === 1 && !/[\u0E00-\u0E7F]/.test(name) && seasons[0] !== (namedSeason ? Number(namedSeason[1] ?? namedSeason[2]) : 1)) return;
+  return { url, title: name, count, complete: /\[จบ\]$/.test(title), ...(seasons.length ? { season: seasons[0] } : {}) };
 }
 async function identify(animeId: string, signal: AbortSignal) {
   const metadata = await fetchMetadata(animeId, signal);
   if (!metadata.episodeCount || metadata.episodeCount > 2000 || metadata.format && metadata.format !== "TV") throw new MediaError("mapping_required");
   const aliases = [...new Map([metadata.title.english, metadata.title.romaji, metadata.title.userPreferred, ...(metadata.synonyms ?? [])]
     .filter((title): title is string => typeof title === "string" && Boolean(title.trim())).map((title) => [normalizeTitle(title), title])).values()];
-  const canonical = new Set(aliases.map(normalizeTitle));
-  const searches = await Promise.allSettled(aliases.slice(0, 3).map((title) => readPage(controlUrl(`/search/${encodeURIComponent(title).replaceAll("%20", "+")}`), signal)));
+  const canonical = new Set(aliases.map(matchTitle));
+  const searchTitles = [...new Set(aliases.flatMap((title) => [title, title.replace(/\s+(II|III|IV)$/i, (_, roman: string) => ` ${{ II: 2, III: 3, IV: 4 }[roman.toUpperCase() as "II" | "III" | "IV"]}`)]))].slice(0, 6);
+  const searches = await Promise.allSettled(searchTitles.map((title) => readPage(controlUrl(`/search/${encodeURIComponent(title).replaceAll("%20", "+")}`), signal)));
   signal.throwIfAborted();
   const matches = new Map<string, Series>();
   for (const result of searches) {
     if (result.status !== "fulfilled") continue;
     for (const anchor of anchors(result.value)) {
       const series = parseSeries(anchor.title, anchor.href);
-      if (!series || !canonical.has(normalizeTitle(series.title)) || series.count > metadata.episodeCount || series.complete && series.count !== metadata.episodeCount) continue;
+      if (!series || series.count > metadata.episodeCount || series.complete && series.count !== metadata.episodeCount) continue;
       const url = controlUrl(series.url);
       if (!/^\/[1-9]\d{0,8}$/.test(url.pathname) || url.search) throw new MediaError("mapping_required");
       matches.set(url.href, { ...series, url: url.href });
     }
   }
-  if (matches.size > 1) throw new MediaError("mapping_required");
-  const series = matches.values().next().value;
-  if (!series) throw new MediaError(providerSearchFailure(searches));
-  const html = await readPage(controlUrl(series.url), signal);
-  const heading = text(/<h1\b[^>]*>([\s\S]*?)<\/h1>/.exec(html)?.[1] ?? "");
-  const detail = parseSeries(heading, series.url);
-  if (!detail || normalizeTitle(detail.title) !== normalizeTitle(series.title) || detail.count !== series.count || detail.complete !== series.complete) throw new MediaError("mapping_required");
+  if (matches.size > 12) throw new MediaError("mapping_required");
+  if ([...matches.values()].filter((series) => canonical.has(matchTitle(series.title))).length > 1) throw new MediaError("mapping_required");
+  const candidates = await Promise.all([...matches.values()].map(async (series) => {
+    const direct = canonical.has(matchTitle(series.title));
+    if (!direct && !/[\u0E00-\u0E7F]/.test(series.title)) return;
+    const html = await readPage(controlUrl(series.url), signal);
+    const heading = text(/<h1\b[^>]*>([\s\S]*?)<\/h1>/.exec(html)?.[1] ?? "");
+    const detail = parseSeries(heading, series.url);
+    if (!detail || normalizeTitle(detail.title) !== normalizeTitle(series.title) || detail.count !== series.count || detail.complete !== series.complete || detail.season !== series.season) throw new MediaError("mapping_required");
+    if (!direct) {
+      const paragraphTitles = [...html.matchAll(/<p\b[^>]*>\s*([^<]+)<br\s*\/?\s*>/gi)].map((match) => text(match[1]));
+      const accepted = paragraphTitles.map(matchTitle).filter((title) => canonical.has(title));
+      if (!accepted.some((title) => series.season === undefined || title.endsWith(` season ${series.season}`))) return;
+    }
+    return { series, html };
+  }));
+  signal.throwIfAborted();
+  const verified = candidates.filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate));
+  if (verified.length > 1) throw new MediaError("mapping_required");
+  const selected = verified[0];
+  if (!selected) throw new MediaError(providerSearchFailure(searches));
+  const { series, html } = selected;
   const episodes: Episode[] = [];
   for (const anchor of anchors(html)) {
     const numberText = /ตอนที่\s*([1-9]\d*)\s+ซับไทย(?:\s+จบ)?$/.exec(anchor.title)?.[1];
@@ -102,7 +123,7 @@ async function readSources(request: EpisodeRequest, signal: AbortSignal) {
   const frames = [...player.matchAll(/<iframe\b[^>]*\bsrc="([^"]+)"/g)];
   if (frames.length !== 1) throw new MediaError("no_source");
   const frame = controlUrl(text(frames[0][1]));
-  if (!/^\/player\/s=a\d{1,2}&f=[A-Za-z0-9_-]{20,100}&m=[A-Za-z0-9_-]{10,100}&e=\d{10}&q=1$/.test(frame.pathname) || frame.search) throw new MediaError("mapping_required");
+  if (!/^\/player\/s=a\d{1,2}&f=[A-Za-z0-9_-]{20,100}&m=[A-Za-z0-9_-]{10,100}&e=\d{10}(?:&d=\d)?&q=1$/.test(frame.pathname) || frame.search) throw new MediaError("mapping_required");
   const config = await readPage(frame, signal, episode.url);
   const sources = [...config.matchAll(/"sources"\s*:\s*(\[[\s\S]*?\])/g)];
   if (sources.length !== 1) throw new MediaError("no_source");

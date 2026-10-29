@@ -68,6 +68,16 @@ describe("AnimeRuka exact identity and current episode origin choices", () => {
     search = search.replace("ภาค 2", "ภาค 3");
     await expect(animerukaAdapter.resolve(request, signal())).rejects.toThrow("no_source");
   });
+  it("matches Roman numeral season aliases while rejecting a different season", async () => {
+    const name = "Synthetic Story Season 2 เรื่องตัวอย่าง (ภาค2)";
+    vi.mocked(fetchMetadata).mockResolvedValue({ id: "mal:anime:123", providerId: "mal", catalogType: "ANIME", title: { romaji: "Synthetic Story II" }, episodeCount: 12, format: "TV" });
+    search = anchor(`${origin}/anime/synthetic-season/`, `${name} ซับไทย`);
+    detail = `<h1>${name} ซับไทย ยังไม่จบ (อัพเดตตอนล่าสุด)</h1>` + anchor(`${origin}/ep/synthetic-season-ep-1/`, `${name} ตอนที่ 1 ซับไทย`);
+    heading = `${name} ตอนที่ 1 ซับไทย`; videoTitle = `${heading}.mp4`;
+    expect(await animerukaAdapter.resolve(request, signal())).toMatchObject({ selectedServerId: "1" });
+    search = search.replaceAll("Season 2", "Season 3").replaceAll("ภาค2", "ภาค3");
+    await expect(animerukaAdapter.resolve(request, signal())).rejects.toThrow("no_source");
+  });
   it("selects a current origin explicitly and rejects stale IDs before resolving a player", async () => {
     await animerukaAdapter.resolve({ ...request, serverId: "3" }, signal());
     expect(fetchResource).toHaveBeenCalledWith(`${origin}/wp-json/dooplayer/v2/123/tv/3?v=1234abcd`, expect.any(AbortSignal), expect.any(Object));

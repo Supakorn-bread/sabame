@@ -49,13 +49,18 @@ function seriesTitle(value: string) {
   const title = match && canonicalProviderTitle(match[1]);
   return title ? { title, ongoing: match![2]?.startsWith("ยังไม่จบ") === true } : undefined;
 }
+function matchingTitle(value: string) {
+  const normalized = normalizeTitle(value);
+  const roman: Record<string, string> = { ii: "2", iii: "3", iv: "4" };
+  return normalized.replace(/\s+(?:season\s+([2-4])|(ii|iii|iv))$/, (_, season: string | undefined, numeral: string | undefined) => ` season ${season ?? roman[numeral!]}`);
+}
 async function identify(request: EpisodeRequest, signal: AbortSignal): Promise<Episode> {
   const metadata = await fetchMetadata(request.animeId, signal);
   if (metadata.format && metadata.format !== "TV" || metadata.episodeCount && metadata.episodeCount > 2000) throw new MediaError("mapping_required");
   const aliases = [...new Map([metadata.title.english, metadata.title.romaji, metadata.title.userPreferred, ...(metadata.synonyms ?? [])]
     .filter((value): value is string => typeof value === "string" && Boolean(value.trim())).map((title) => [normalizeTitle(title), title])).values()];
   if (!aliases.length) throw new MediaError("mapping_required");
-  const canonical = new Set(aliases.map(normalizeTitle));
+  const canonical = new Set(aliases.map(matchingTitle));
   const searches = await Promise.allSettled(aliases.slice(0, 3).map((alias) => {
     const url = new URL(origin); url.searchParams.set("s", alias);
     return readPage(controlUrl(url.href), signal);
@@ -66,7 +71,7 @@ async function identify(request: EpisodeRequest, signal: AbortSignal): Promise<E
     if (search.status !== "fulfilled") continue;
     for (const anchor of anchors(search.value)) {
       const series = seriesTitle(anchor.title);
-      if (!series || !canonical.has(normalizeTitle(series.title))) continue;
+      if (!series || !canonical.has(matchingTitle(series.title))) continue;
       const url = controlUrl(anchor.href);
       if (url.origin !== origin || !url.pathname.startsWith("/anime/")) throw new MediaError("mapping_required");
       matches.set(url.href, series.title);

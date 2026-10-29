@@ -12,6 +12,7 @@ let search: string;
 let detail: string;
 let player: string;
 let heading: string;
+let framePath: string;
 const anchor = (path: string, label: string) => `<a href="${origin}${path}">${label}</a>`;
 const epTitle = (number: number) => `Synthetic Season ตอนที่ ${number} ซับไทย`;
 const episode = (number: number) => anchor(`/123/${"syntheticId" + number}`, epTitle(number));
@@ -22,18 +23,39 @@ beforeEach(() => {
   detail = `<h1>${title}</h1>` + [3, 1, 2].map(episode).join("");
   heading = epTitle(3);
   player = `"sources": [{"file":"${cdn}","label":"720p"},{"file":"${cdn.replace(".mp4?", "-q360.mp4?")}","label":"360p","default":"true"}]`;
+  framePath = "/player/s=a15&f=syntheticFileToken000000&m=syntheticToken000&e=1900000000&q=1";
   vi.stubGlobal("fetch", vi.fn(async (input: URL) => {
     if (input.origin !== origin) throw new Error("unexpected media fetch");
     if (input.pathname.startsWith("/search/")) return new Response(search);
     if (input.pathname === "/123") return new Response(detail);
     if (input.pathname.startsWith("/123/")) return new Response(`<h1>${heading}</h1>function mainv() { $.ajax({url: "/k49dF65fkfl2X0So2lFB06?u=syntheticOpaqueToken00000="}); }`);
-    if (input.pathname === "/k49dF65fkfl2X0So2lFB06") return new Response('<iframe src="/player/s=a15&f=syntheticFileToken000000&m=syntheticToken000&e=1900000000&q=1"></iframe>');
+    if (input.pathname === "/k49dF65fkfl2X0So2lFB06") return new Response(`<iframe src="${framePath}"></iframe>`);
     if (input.pathname.startsWith("/player/")) return new Response(player);
     throw new Error("unexpected control page");
   }));
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
 describe("Anifume identity and embedded Thai subtitles", () => {
+  it("accepts the optional numeric player flag and rejects injected values", async () => {
+    framePath = framePath.replace("&q=1", "&d=1&q=1");
+    expect((await resolve()).selectedQualityId).toBe("720p");
+    framePath = framePath.replace("&d=1", "&d=evil");
+    await expect(resolve()).rejects.toThrow("mapping_required");
+  });
+  it("matches a Thai heading against a verified Roman season title in the detail page", async () => {
+    vi.mocked(fetchMetadata).mockResolvedValue({ id: "mal:anime:123", providerId: "mal", catalogType: "ANIME", title: { romaji: "Synthetic Story II" }, episodeCount: 12, format: "TV" });
+    const thai = "เรื่องตัวอย่าง (ภาค2) ตอนที่ 1-3 ซับไทย";
+    search = anchor("/123", thai);
+    detail = `<h1>${thai}</h1><p>Synthetic Story 2<br />รายละเอียด</p>` + [3, 1, 2].map(episode).join("");
+    expect((await resolve()).selectedQualityId).toBe("720p");
+    detail = detail.replace("Synthetic Story 2", "Synthetic Story 3");
+    await expect(resolve()).rejects.toThrow("no_source");
+    detail = detail.replace("Synthetic Story 3", "Synthetic Story 2").replaceAll("ภาค2", "ภาค3");
+    search = search.replace("ภาค2", "ภาค3");
+    await expect(resolve()).rejects.toThrow("no_source");
+    search = search.replace("ซับไทย", "พากย์ไทย");
+    await expect(resolve()).rejects.toThrow("no_source");
+  });
   it("resolves the exact numbered episode with provider native embedded subtitles and no text track", async () => {
     expect(await resolve()).toEqual({ video: { url: cdn, type: "mp4", quality: "720p" }, qualities: [{ id: "360p", label: "360p" }, { id: "720p", label: "720p" }], selectedQualityId: "720p", subtitles: [], embeddedSubtitles: { language: "th", label: "Thai (embedded)", removable: false } });
     expect(fetch).toHaveBeenCalledWith(expect.objectContaining({ pathname: "/k49dF65fkfl2X0So2lFB06" }), expect.objectContaining({ cache: "no-store", redirect: "error", headers: expect.objectContaining({ Referer: `${origin}/123/syntheticId3`, "X-Requested-With": "XMLHttpRequest" }) }));

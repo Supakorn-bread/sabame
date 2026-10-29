@@ -18,7 +18,7 @@ export function resourceReferer(policy: DeliveryPolicyId): string | undefined {
 }
 export function allowedHosts(policy: DeliveryPolicyId = "default") {
   if (policy === "animeruka") return new Set(["animeruka.com", "animemami.xyz", "cdn2.maimeorder.com"]);
-  if (policy === "anifume") return new Set(["a15.rukoluo.com", "a16.rukoluo.com", "a17.rukoluo.com"]);
+  if (policy === "anifume") return new Set(["a12.rukoluo.com", "a13.rukoluo.com", "a15.rukoluo.com", "a16.rukoluo.com", "a17.rukoluo.com"]);
   if (policy === "anizone") return new Set(["seiryuu.vid-cdn.xyz"]);
   if (policy === "subdl") return new Set(["dl.subdl.com"]);
   if (policy === "bilibili") return new Set(["s.bstarstatic.com"]);
@@ -60,7 +60,7 @@ export function validatePolicyResource(value: string, policy: DeliveryPolicyId, 
     } else if (url.hostname !== "animemami.xyz" || !/^\/v\/[A-Za-z0-9_-]{10,80}$/.test(url.pathname) || url.search) throw new MediaError("invalid_resource");
   }
   if (policy === "bilibili" && (kind !== "subtitle" || !/^\/ogv\/subtitle\/[a-f0-9]{32,64}\.json$/.test(url.pathname) || url.hash)) throw new MediaError("invalid_resource");
-  if (policy === "anifume" && (kind !== "mp4" || !/^\/f\/[A-Za-z0-9_-]{1,160}\/[A-Za-z0-9_-]{1,200}\.mp4$/.test(url.pathname) || url.hash || [...url.searchParams.keys()].sort().join() !== "e,m" || !/^[A-Za-z0-9_-]{10,100}$/.test(url.searchParams.get("m") ?? "") || !/^\d{10}$/.test(url.searchParams.get("e") ?? ""))) throw new MediaError("invalid_resource");
+  if (policy === "anifume" && (kind !== "mp4" || !/^\/f\/(?:1\/)?[A-Za-z0-9_-]{1,160}\/[A-Za-z0-9_-]{1,200}\.mp4$/.test(url.pathname) || url.hash || [...url.searchParams.keys()].sort().join() !== "e,m" || !/^[A-Za-z0-9_-]{10,100}$/.test(url.searchParams.get("m") ?? "") || !/^\d{10}$/.test(url.searchParams.get("e") ?? ""))) throw new MediaError("invalid_resource");
   if (policy === "subdl" && (kind !== "subtitle" || !/^\/subtitle\/[A-Za-z0-9_-]{1,100}\/[A-Za-z0-9_-]{1,100}$/.test(url.pathname) || url.search || url.hash)) throw new MediaError("invalid_resource");
   return url;
 }
