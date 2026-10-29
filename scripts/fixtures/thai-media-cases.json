@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sword-s2-ep1-anifume",
+    "animeId": "mal-53913",
+    "episodeNumber": 1,
+    "provider": "anifume"
+  },
+  {
+    "id": "sword-s2-ep1-animeruka",
+    "animeId": "mal-53913",
+    "episodeNumber": 1,
+    "provider": "animeruka"
+  },
+  {
+    "id": "sword-s2-ep4-anifume",
+    "animeId": "mal-53913",
+    "episodeNumber": 4,
+    "provider": "anifume"
+  },
+  {
+    "id": "sword-s2-ep4-animeruka",
+    "animeId": "mal-53913",
+    "episodeNumber": 4,
+    "provider": "animeruka"
+  }
+]

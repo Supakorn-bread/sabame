@@ -14,6 +14,8 @@
     "typecheck": "npm run typecheck:web && npm run typecheck -w @sabame/api && tsc --noEmit -p tsconfig.json",
     "test": "npm run test:architecture && npm run test -w @sabame/catalog && npm run test -w @sabame/web --",
     "test:watch": "npm run test:watch -w @sabame/web",
+    "probe:thai": "node scripts/probe-thai-media.mjs",
+    "test:probe:thai": "node --test scripts/probe-thai-media.test.mjs",
     "test:e2e": "playwright test",
     "build:shared": "npm run build -w @sabame/domain && npm run build -w @sabame/catalog",
     "prebuild": "npm run build:shared",
