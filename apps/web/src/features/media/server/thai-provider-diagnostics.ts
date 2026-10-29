@@ -9,6 +9,8 @@ const targets = [
   { provider: "anifume", page: "detail", url: "https://anifume.com/41686" },
   { provider: "animeruka", page: "search", url: "https://animeruka.com/?s=Tensei+shitara+Ken+deshita+Season+2" },
   { provider: "animeruka", page: "detail", url: "https://animeruka.com/anime/tensei-shitara-ken-deshita-season-2/" },
+  { provider: "anizone", page: "search", url: "https://anizone.to/anime?search=Futari+wa+Precure" },
+  { provider: "anizone", page: "detail", url: "https://anizone.to/anime/qc8ez4ta" },
 ] as const;
 type Target = typeof targets[number];
 const maxBytes = 131_072;
@@ -41,10 +43,14 @@ function summarize(status: number, headers: Headers, body: string, bytes: number
   };
 }
 
-async function fetchAnifume(target: Target, signal: AbortSignal) {
-  // Match the adapter's search/detail request headers. Manual mode exposes a
-  // redirect's status without following it (the adapter rejects redirects).
-  const response = await fetch(target.url, { signal, redirect: "manual", cache: "no-store", headers: { "User-Agent": "Mozilla/5.0" } });
+async function fetchProviderPage(target: Target, signal: AbortSignal) {
+  // Match each adapter's request headers. Manual mode exposes redirect status without following it.
+  const response = await fetch(target.url, {
+    signal,
+    redirect: "manual",
+    cache: "no-store",
+    ...(target.provider === "anifume" ? { headers: { "User-Agent": "Mozilla/5.0" } } : {}),
+  });
   const reader = response.body?.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -112,7 +118,7 @@ export async function diagnoseThaiProviders() {
     const start = Date.now();
     try {
       const signal = AbortSignal.timeout(8_000);
-      const result = await (target.provider === "anifume" ? fetchAnifume(target, signal) : fetchAnimeruka(target, signal));
+      const result = await (target.provider === "animeruka" ? fetchAnimeruka(target, signal) : fetchProviderPage(target, signal));
       return { provider: target.provider, page: target.page, ...result, elapsedMs: Date.now() - start };
     } catch (error) {
       return { provider: target.provider, page: target.page, error: errorCode(error), elapsedMs: Date.now() - start };
