@@ -8,10 +8,20 @@ import { MediaError } from "@/features/media/types";
 import { appendSubdlThaiSubtitle } from "@/features/media/server/subdl";
 import { appendBilibiliThaiSubtitle } from "@/features/media/server/bilibili";
 export const runtime = "nodejs";
+function requestOrigin(request: Request): string {
+  const externalUrl = process.env.RENDER === "true" ? process.env.RENDER_EXTERNAL_URL : undefined;
+  if (!externalUrl) return new URL(request.url).origin;
+  try {
+    const url = new URL(externalUrl);
+    if (url.protocol !== "https:" || externalUrl !== url.origin && externalUrl !== `${url.origin}/`) throw new MediaError("invalid_request");
+    return url.origin;
+  } catch { throw new MediaError("invalid_request"); }
+}
 export async function POST(request: Request, context: { params: Promise<{ animeId: string }> }) {
   return api(request, async (signal, requestId) => {
     const started = Date.now();
-    if (request.headers.get("origin") && request.headers.get("origin") !== new URL(request.url).origin) throw new MediaError("invalid_request");
+    // Render terminates HTTPS before forwarding the request to Next.js over HTTP.
+    if (request.headers.get("origin") && request.headers.get("origin") !== requestOrigin(request)) throw new MediaError("invalid_request");
     const { episodeNumber, provider, serverId, qualityId } = await readMediaRequest(request);
     const { animeId } = await context.params;
     const metadata = await withDeadline(signal, 12_000, (metadataSignal) => fetchMetadata(animeId, metadataSignal));

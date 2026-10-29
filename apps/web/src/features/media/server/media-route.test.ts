@@ -12,8 +12,63 @@ import { MediaError } from "../types";
 import { appendBilibiliThaiSubtitle } from "./bilibili";
 import { appendSubdlThaiSubtitle } from "./subdl";
 
-beforeEach(() => { for (const provider of mediaProviders) vi.mocked(provider.resolve).mockRejectedValue(new MediaError("no_source")); });
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.stubEnv("RENDER", "");
+  vi.stubEnv("RENDER_EXTERNAL_URL", "");
+  for (const provider of mediaProviders) vi.mocked(provider.resolve).mockRejectedValue(new MediaError("no_source"));
+});
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.clearAllMocks(); vi.unstubAllEnvs(); });
+
+it.each(["https://sabame.onrender.com", "https://sabame.onrender.com/"])("accepts browser playback behind Render HTTPS termination with %s", async (externalUrl) => {
+  vi.stubEnv("RENDER", "true");
+  vi.stubEnv("RENDER_EXTERNAL_URL", externalUrl);
+  vi.mocked(mediaProviders[0].resolve).mockResolvedValue({ video: { url: "https://example.com/source.mp4", type: "mp4" }, subtitles: [] });
+  const response = await POST(new Request("http://localhost:10000/api/anime/mal-21/media", {
+    method: "POST", headers: { Origin: "https://sabame.onrender.com" }, body: JSON.stringify({ episodeNumber: 1, provider: "animeparadise" }),
+  }), { params: Promise.resolve({ animeId: "mal-21" }) });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ provider: "animeparadise" });
+});
+
+it.each(["https://evil.test", "null", "http://localhost:10000", "https://sabame.onrender.com.evil.test"])("rejects foreign Render origin %s despite forged forwarding headers", async (origin) => {
+  vi.stubEnv("RENDER", "true");
+  vi.stubEnv("RENDER_EXTERNAL_URL", "https://sabame.onrender.com");
+  const response = await POST(new Request("http://localhost:10000/api/anime/mal-21/media", {
+    method: "POST", headers: { Origin: origin, Host: "evil.test", "X-Forwarded-Host": "evil.test", "X-Forwarded-Proto": "https" }, body: JSON.stringify({ episodeNumber: 1 }),
+  }), { params: Promise.resolve({ animeId: "mal-21" }) });
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({ error: { code: "invalid_request" } });
+  expect(mediaProviders.every((provider) => vi.mocked(provider.resolve).mock.calls.length === 0)).toBe(true);
+});
+
+it.each(["not-a-url", "http://sabame.onrender.com", "https://user:password@sabame.onrender.com", "https://sabame.onrender.com/watch", "https://sabame.onrender.com?query=1", "https://sabame.onrender.com#fragment"])("rejects malformed Render external URL %s", async (externalUrl) => {
+  vi.stubEnv("RENDER", "true");
+  vi.stubEnv("RENDER_EXTERNAL_URL", externalUrl);
+  const response = await POST(new Request("http://localhost:10000/api/anime/mal-21/media", {
+    method: "POST", headers: { Origin: "https://sabame.onrender.com" }, body: JSON.stringify({ episodeNumber: 1 }),
+  }), { params: Promise.resolve({ animeId: "mal-21" }) });
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({ error: { code: "invalid_request" } });
+  expect(mediaProviders.every((provider) => vi.mocked(provider.resolve).mock.calls.length === 0)).toBe(true);
+});
+
+it.each(["", "false"])("uses the request origin outside Render (%s)", async (render) => {
+  vi.stubEnv("RENDER", render);
+  vi.stubEnv("RENDER_EXTERNAL_URL", "https://other.onrender.com");
+  vi.mocked(mediaProviders[0].resolve).mockResolvedValue({ video: { url: "https://example.com/source.mp4", type: "mp4" }, subtitles: [] });
+  const response = await POST(new Request("http://localhost:3000/api/anime/mal-21/media", {
+    method: "POST", headers: { Origin: "http://localhost:3000" }, body: JSON.stringify({ episodeNumber: 1, provider: "animeparadise" }),
+  }), { params: Promise.resolve({ animeId: "mal-21" }) });
+  expect(response.status).toBe(200);
+});
+
+it("rejects a foreign origin outside Render", async () => {
+  const response = await POST(new Request("http://localhost:3000/api/anime/mal-21/media", {
+    method: "POST", headers: { Origin: "https://evil.test", "X-Forwarded-Host": "evil.test", "X-Forwarded-Proto": "https" }, body: JSON.stringify({ episodeNumber: 1 }),
+  }), { params: Promise.resolve({ animeId: "mal-21" }) });
+  expect(response.status).toBe(400);
+  expect(mediaProviders.every((provider) => vi.mocked(provider.resolve).mock.calls.length === 0)).toBe(true);
+});
 
 it("automatically prioritizes slower Thai playback over fast English", async () => {
   vi.useFakeTimers();
